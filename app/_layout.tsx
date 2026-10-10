@@ -7,6 +7,7 @@ import { StatusBar } from 'expo-status-bar'
 import * as SplashScreen from 'expo-splash-screen'
 import { useFonts, Tajawal_400Regular, Tajawal_500Medium, Tajawal_700Bold } from '@expo-google-fonts/tajawal'
 import { AppProviders, useTheme } from '../src/providers'
+import { AppStateProvider } from '../src/appState'
 
 SplashScreen.preventAutoHideAsync().catch(() => undefined)
 
@@ -19,5 +20,5 @@ export default function RootLayout(): ReactElement | null {
   const [fontsLoaded] = useFonts({ Tajawal_400Regular, Tajawal_500Medium, Tajawal_700Bold })
   useEffect(() => { if (fontsLoaded) SplashScreen.hideAsync().catch(() => undefined) }, [fontsLoaded])
   if (!fontsLoaded) return <View style={{ flex: 1, backgroundColor: '#F7F7F5' }}><Text style={{ opacity: 0 }}>تحميل</Text></View>
-  return <GestureHandlerRootView style={{ flex: 1 }}><AppProviders><Navigation /></AppProviders></GestureHandlerRootView>
+  return <GestureHandlerRootView style={{ flex: 1 }}><AppProviders><AppStateProvider><Navigation /></AppStateProvider></AppProviders></GestureHandlerRootView>
 }

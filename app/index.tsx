@@ -1,19 +1,13 @@
-import { StyleSheet, Text, View } from 'react-native'
-import type { ReactElement } from 'react'
-import { useTheme } from '../src/providers'
-import { Card } from '../src/components/Primitives'
-import { strings } from '../src/strings'
+import { useEffect, type ReactElement } from 'react'
+import { ActivityIndicator, View } from 'react-native'
+import { useRouter } from 'expo-router'
+import { useAppState } from '../src/appState'
+import { useSettings, useTheme } from '../src/providers'
+import WelcomeScreen from '../src/screens/WelcomeScreen'
 
-export default function FoundationScreen(): ReactElement {
-  const { palette } = useTheme()
-  return <View style={[styles.screen, { backgroundColor: palette.bg }]}><View style={styles.content}><Text style={[styles.brand, { color: palette.accent }]}>{strings.appName}</Text><Card style={styles.card}><Text style={[styles.title, { color: palette.text }]}>{strings.foundationPhase}</Text><Text style={[styles.body, { color: palette.muted }]}>{strings.foundationReady}</Text></Card></View></View>
+export default function IndexScreen(): ReactElement {
+  const router = useRouter(); const { palette } = useTheme(); const settings = useSettings(); const { ready } = useAppState()
+  useEffect(() => { if (ready && settings.welcomeDone) router.replace('/notes') }, [ready, router, settings.welcomeDone])
+  if (!ready || settings.welcomeDone) return <View style={{ flex: 1, backgroundColor: palette.bg, alignItems: 'center', justifyContent: 'center' }}><ActivityIndicator color={palette.accent} /></View>
+  return <WelcomeScreen />
 }
-
-const styles = StyleSheet.create({
-  screen: { flex: 1 },
-  content: { flex: 1, paddingHorizontal: 16, paddingTop: 64 },
-  brand: { fontFamily: 'Tajawal_700Bold', fontSize: 32, textAlign: 'right', marginBottom: 24 },
-  card: { padding: 18 },
-  title: { fontFamily: 'Tajawal_700Bold', fontSize: 20, textAlign: 'right', marginBottom: 8 },
-  body: { fontFamily: 'Tajawal_400Regular', fontSize: 16, textAlign: 'right', lineHeight: 28 },
-})
