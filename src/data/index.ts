@@ -1,0 +1,5 @@
+export { notesRepo } from './notesRepo'
+export { foldersRepo } from './foldersRepo'
+export { tasksRepo } from './tasksRepo'
+export { settingsRepo } from './settingsRepo'
+export { assistantMock } from './assistantMock'

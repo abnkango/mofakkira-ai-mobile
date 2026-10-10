@@ -1,0 +1,16 @@
+{
+  "expo": {
+    "name": "المفكرة AI",
+    "slug": "mofakkira-ai-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "scheme": "mofakkira-ai-mobile",
+    "android": {
+      "package": "com.mofakkira.ai.mobile",
+      "softwareKeyboardLayoutMode": "resize"
+    },
+    "plugins": ["expo-router", "expo-secure-store", "expo-updates"],
+    "experiments": { "typedRoutes": true }
+  }
+}
