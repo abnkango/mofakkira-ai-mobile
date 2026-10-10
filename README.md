@@ -4,7 +4,7 @@
 
 ## الحالة
 
-تم إنجاز **Phase 0 – Audit**، وبعد اعتماد التصحيحات بدأت **Phase 1 – Foundation**. راجع [`docs/PORTING_AUDIT.md`](docs/PORTING_AUDIT.md) للتدقيق والقرارات الملزمة.
+تم إنجاز **Phase 0 – Audit** و**Phase 1 – Foundation** و**Phase 2 – Screens** و**Phase 3 – Verification**. راجع [`docs/PORTING_AUDIT.md`](docs/PORTING_AUDIT.md) للتدقيق والقرارات الملزمة، و[`docs/PARITY_REPORT.md`](docs/PARITY_REPORT.md) لنتائج التحقق والاختلافات.
 
 ## Expo SDK
 
@@ -44,6 +44,10 @@
 - إذا لم يتصل Expo Go، تأكد من أن الهاتف وTermux على شبكة Wi‑Fi نفسها، ثم أعد تشغيل `npx expo start --lan`.
 - إذا بقيت واجهة RTL قديمة بعد تحديث الكود، أغلق المشروع من Expo Go وافتحه مجددًا؛ هذا يعيد تطبيق إعداد RTL دون تغيير بيانات AsyncStorage.
 - إذا لم يظهر الخط، أعد تشغيل Metro مع مسح cache عبر `npx expo start -c`.
+
+## حالة التحقق النهائية
+
+`npx tsc --noEmit` و`npx expo lint` و`npx expo-doctor` و`npx expo export --platform android` تمر بنجاح. لم يُشغّل التطبيق على هاتف Android فعلي من هذه البيئة؛ راجع تقرير parity لقائمة الاختبارات غير المتحققة.
 
 ## الخصوصية
 
