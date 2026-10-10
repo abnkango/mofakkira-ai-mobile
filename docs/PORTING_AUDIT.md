@@ -23,6 +23,14 @@
 - **تعارض موثق:** التعليمات تطلب «كل 9 شاشات»، لكن المصدر يحتوي ثماني شاشات مستقلة قابلة للعرض: Welcome, Notes, Folders, Editor, Tasks, Assistant, Settings, RecycleBin. لا توجد شاشة تاسعة في `App.tsx` أو `public/manus-routes.json`؛ سأحافظ على الثماني وأضيف غلاف التبويبات كجزء من Notes/Tasks، لا كشاشة مخترعة.
 - `App.tsx` يحتوي حالة وتخزينًا محليًا وردود مساعد محاكية؛ لا توجد طلبات شبكة أو backend.
 
+### تصحيحات معتمدة قبل Phase 1
+
+- **مواضع الأزرار العائمة:** في RTL يكون `inline-start` هو يمين الشاشة و`inline-end` هو يسارها. لذلك سيستخدم RN `start: 18` لزر `+`، و`end: 18` لزر `✦`، مع `bottom: 84`، وهو نفس منطق النموذج الأصلي (`fab-new` على `inset-inline-start` و`fab-ai` على `inset-inline-end`). لا يجوز عكسهما إلى اليسار/اليمين الفيزيائيين.
+- **حذف المجلد:** عند حذف مجلد، ستُحدّث كل ملاحظاته صراحة إلى `folderId: null`، وليس `undefined`.
+- **حالة البدء والخصوصية:** `welcomeDone` و`privacyNoticeAcknowledged` جزءان من `settingsRepo` ويُحفظان في AsyncStorage، لا في حالة تطبيق غير دائمة.
+- **زر الرجوع في Android:** أولوية الرجوع هي: إغلاق المساعد إن كان مفتوحًا؛ ثم pop من المحرر/المجلدات/الإعدادات/السلة؛ وفي شاشة الملاحظات الرئيسية الخروج من التطبيق.
+- **Safe area:** لن يُنقل إطار الهاتف أو الخلفية خارج التطبيق إلى RN. سيملأ التطبيق الشاشة، وتُستخدم safe-area insets للحشو حول الرأس وشريط التنقل والإجراءات العائمة.
+
 ## 2. جرد الشاشات والمسارات
 
 | الشاشة في النموذج | حالة/دخول الويب | ملف Expo Router المقترح | ملاحظات النقل |
@@ -352,7 +360,7 @@
 | CSS variables وmedia queries | `StyleSheet.create` + theme context وحسابات `useWindowDimensions` عند الحاجة |
 | `display:flex/grid` | Flexbox في RN؛ لا CSS ولا Tailwind |
 | `overflow-y:auto` للقوائم | `FlatList`؛ لا ScrollView+map للقوائم |
-| `position:absolute`, `inset-inline-*` | `position:'absolute'` مع `start/end` أو `left/right` المقصودة؛ اختبار physical positions في RTL |
+| `position:absolute`, `inset-inline-*` | `position:'absolute'` مع `start/end`: زر `+` يستخدم `start:18` (يمين RTL)، وزر `✦` يستخدم `end:18` (يسار RTL)، مع اختبار Android |
 | `localStorage` | repositories في الذاكرة؛ AsyncStorage للإعدادات فقط |
 | تخزين المفتاح في localStorage | `expo-secure-store` فقط |
 | `window.confirm`, prompt, modal backdrop | Modal-based `Dialog`/`Sheet` مع `onRequestClose`، وTextInput بدل prompt |
@@ -373,19 +381,20 @@
 ## 8. المخاطر والقرارات المحافظة
 
 1. **عدم تطابق عدّ الشاشات:** الطلب يقول 9، المصدر 8. القرار: عدم اختراع شاشة؛ اعتبار غلاف التبويبات/المساعد طبقات معمارية وتوثيق التعارض.
-2. **RTL ومواضع FAB:** `inset-inline-start` في الويب يضع + بصريًا يسارًا في RTL، و`inset-inline-end` يضع ✦ بصريًا يمينًا. في RN يجب استخدام props التي تعطي نفس الموضع الفيزيائي بعد RTL، والتحقق من Android لا من web preview.
+2. **RTL ومواضع FAB:** في RTL `inline-start` هو اليمين و`inline-end` هو اليسار؛ لذلك يستخدم + `start:18` ويستخدم ✦ `end:18`. يجب التحقق من Android لا من web preview.
 3. **إعادة تحميل RTL:** `forceRTL` قد يتطلب reload؛ يجب تنفيذ مسار يعمل في Expo Go وتوثيق أن أول render لا يظهر LTR.
 4. **الخط العربي والأوزان:** RN لا يصطنع أوزان Tajawal؛ تحميل الأوزان المطلوبة فقط وربطها صراحة قد يغير المقاسات، ويجب فحص clipping على Android فعليًا.
 5. **Expo Go/SDK:** إصدار SDK المدعوم من Expo Go يتغير؛ اختيار exact SDK وتثبيت حزم Expo عبر `npx expo install` مؤجل إلى Phase 1 ويجب تسجيله في README وlockfile.
 6. **تعارض القوائم الثابتة والكيبورد:** المحرر والمساعد يحتاجان KeyboardAvoidingView أو resize، لا الاثنين المتصارعين؛ الاختبار الفعلي على Android غير متاح هنا.
 7. **التحويل من ISO إلى epoch:** المصدر يستخدم ISO وتوقيتًا محليًا؛ النقل إلى ms قد يغير عرض التواريخ إن لم تُحفظ دلالة المنطقة الزمنية. يجب اختبار مثال `8 أكتوبر 12:15` يدويًا.
 8. **تخزين المفتاح:** أي logging أو state leak للمفتاح خطر. SecureStore فقط، وقناع آخر أربعة عند القراءة دون إعادة عرض القيمة.
-9. **حذف المجلد والاستعادة:** `folderId` null بدل undefined يجب أن يكون موحدًا كي لا تفشل العدادات والاستعادة.
+9. **حذف المجلد والاستعادة:** حذف المجلد يكتب `folderId: null` صراحة لكل ملاحظاته؛ والاستعادة تستخدم `originalFolderId` إن كان موجودًا وإلا null.
 10. **سلوك الأخطاء في المساعد ناقص في المصدر:** توجد واجهة error لكن مسار mock لا يشغّلها عمليًا. سنحتفظ بالواجهة ونوثق ما تم اختباره بدل ادعاء وجود trigger غير موجود.
 11. **الإيماءة:** source يستخدم pointer events؛ Gesture Handler يحتاج threshold واتجاهين وسلوكًا لا يمنع checkbox.
 12. **حوار إعادة التسمية:** `window.prompt` غير موجود في RN؛ يلزم Dialog نصي مع الحفاظ على النصوص والسلوك، مع عدم استخدام مكتبة native غير متوافقة مع Expo Go.
 13. **اختبار التكافؤ المرئي:** web preview اختياري وغير صالح كدليل RTL/خطوط؛ لا يوجد جهاز Android فعلي في بيئة التنفيذ الحالية.
 14. **الأصول المنشورة minified:** لا توجد source maps مطلوبة، لكن المصدر الملتزم هو المرجع القابل للقراءة؛ أي فرق لاحق بين الأصل والمصدر يجب أن يسجل في التقرير النهائي.
+15. **Back وSafe Area:** يلزم ترتيب Back مخصص حتى لا يخرج المستخدم من التطبيق قبل إغلاق المساعد أو pop الشاشة، كما يلزم استخدام insets بدل إطار هاتف ويب؛ لا يمكن إثبات ذلك دون جهاز Android فعلي.
 
 ## 9. قائمة تحقق للمرحلة التالية
 
@@ -393,10 +402,13 @@
 - [ ] Scaffold TypeScript strict + Expo Router، وعدم استخدام dev client/EAS/custom native modules.
 - [ ] `I18nManager` قبل أول render، وSplashScreen حتى تحميل Tajawal.
 - [ ] providers: theme, repositories, settings, safe area, gesture root.
+- [ ] settingsRepo يحفظ `welcomeDone` و`privacyNoticeAcknowledged` في AsyncStorage.
+- [ ] Android Back: assistant ثم stack screens ثم exit من Notes root.
+- [ ] safe-area insets فقط، بلا phone frame أو خلفية خارجية.
 - [ ] repositories async، timestamps ms، seed reset كل launch، purge 30 يومًا عند القراءة.
 - [ ] `formatNoteDate` يدويًا دون Intl.
 - [ ] primitives: Button, IconButton, Card, Chip, Input, Checkbox, Toast, Dialog, Sheet, FAB, BottomNav.
 - [ ] strings module يستخرج القائمة أعلاه حرفيًا.
 - [ ] كل شاشة ملف مستقل، والقوائم FlatList فقط.
-- [ ] توثيق موضع + و✦ الفيزيائي في README مع reasoning RTL.
+- [ ] توثيق موضع + و✦: `start:18` لليمين RTL و`end:18` لليسار RTL، في README مع reasoning.
 - [ ] عدم تشغيل Phase 1 قبل رسالة المستخدم `continue` وفق CHECKPOINT 1.
