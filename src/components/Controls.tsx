@@ -2,6 +2,7 @@ import { Modal, Pressable, StyleSheet, Text, TextInput, View, type TextInputProp
 import { Plus, Sparkles } from 'lucide-react-native'
 import type { ReactElement, ReactNode } from 'react'
 import { useTheme } from '../providers'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { shadows } from '../theme'
 
 export const Input = (props: TextInputProps): ReactElement => {
@@ -21,8 +22,8 @@ export const FAB = ({ label, onPress, side = 'start' }: { label: string; onPress
 }
 
 export const BottomNav = ({ active, onChange }: { active: 'notes' | 'tasks'; onChange: (value: 'notes' | 'tasks') => void }): ReactElement => {
-  const { palette } = useTheme()
-  return <View style={[styles.bottomNav, { backgroundColor: palette.surface, borderColor: palette.border }]}><Pressable onPress={() => onChange('notes')} style={[styles.navItem, active === 'notes' && { backgroundColor: palette.accentBg }]}><Text style={{ color: active === 'notes' ? palette.accent : palette.muted, fontFamily: 'Tajawal_700Bold' }}>الملاحظات</Text></Pressable><Pressable onPress={() => onChange('tasks')} style={[styles.navItem, active === 'tasks' && { backgroundColor: palette.accentBg }]}><Text style={{ color: active === 'tasks' ? palette.accent : palette.muted, fontFamily: 'Tajawal_700Bold' }}>المهام</Text></Pressable></View>
+  const { palette } = useTheme(); const insets = useSafeAreaInsets()
+  return <View style={[styles.bottomNav, { backgroundColor: palette.surface, borderColor: palette.border, marginBottom: Math.max(insets.bottom, 18) }]}><Pressable onPress={() => onChange('notes')} style={[styles.navItem, active === 'notes' && { backgroundColor: palette.accentBg }]}><Text style={{ color: active === 'notes' ? palette.accent : palette.muted, fontFamily: 'Tajawal_700Bold' }}>الملاحظات</Text></Pressable><Pressable onPress={() => onChange('tasks')} style={[styles.navItem, active === 'tasks' && { backgroundColor: palette.accentBg }]}><Text style={{ color: active === 'tasks' ? palette.accent : palette.muted, fontFamily: 'Tajawal_700Bold' }}>المهام</Text></Pressable></View>
 }
 
 export const Toast = ({ message }: { message: string }): ReactElement => { const { palette } = useTheme(); return <View style={[styles.toast, { backgroundColor: palette.text }]}><Text style={{ color: palette.bg, fontFamily: 'Tajawal_700Bold' }}>{message}</Text></View> }
