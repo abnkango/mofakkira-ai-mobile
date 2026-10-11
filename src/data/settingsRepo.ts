@@ -5,6 +5,7 @@ import { initialSettings } from '../domain'
 
 const settingsKey = 'mofakkira.settings.v1'
 const apiKeyKey = 'mofakkira.api-key.v1'
+const rtlReloadMarker = 'mofakkira.rtl.reload-attempted.v1'
 
 export const settingsRepo = {
   async read(): Promise<Settings> {
@@ -20,4 +21,8 @@ export const settingsRepo = {
   async readApiKey(): Promise<string> { return (await SecureStore.getItemAsync(apiKeyKey)) ?? '' },
   async saveApiKey(value: string): Promise<void> { await SecureStore.setItemAsync(apiKeyKey, value) },
   async deleteApiKey(): Promise<void> { await SecureStore.deleteItemAsync(apiKeyKey) },
+  async reset(): Promise<void> {
+    await AsyncStorage.multiRemove([settingsKey, rtlReloadMarker])
+    await SecureStore.deleteItemAsync(apiKeyKey)
+  },
 }
