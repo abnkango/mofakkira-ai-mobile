@@ -1,4 +1,5 @@
 import '../src/rtl'
+import '../src/typography'
 import { useEffect, type ReactElement } from 'react'
 import { BackHandler, Text, View } from 'react-native'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'

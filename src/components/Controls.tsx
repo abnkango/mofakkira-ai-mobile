@@ -30,7 +30,7 @@ export const Dialog = ({ visible, title, children, onClose }: { visible: boolean
 export const Sheet = ({ visible, children, onClose }: { visible: boolean; children: ReactNode; onClose: () => void }): ReactElement => { const { palette } = useTheme(); return <Modal visible={visible} animationType="slide" onRequestClose={onClose}><View style={[styles.sheet, { backgroundColor: palette.bg }]}>{children}</View></Modal> }
 
 const styles = StyleSheet.create({
-  input: { height: 48, borderWidth: 1, borderRadius: 14, paddingHorizontal: 15, fontFamily: 'Tajawal_400Regular', fontSize: 15 },
+  input: { height: 48, borderWidth: 1, borderRadius: 14, paddingHorizontal: 15, fontFamily: 'Tajawal_400Regular', fontSize: 15, textAlign: 'right', writingDirection: 'rtl' },
   row: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   checkbox: { width: 22, height: 22, borderRadius: 7, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
   fab: { position: 'absolute', bottom: 84, width: 52, height: 52, borderRadius: 18, alignItems: 'center', justifyContent: 'center', zIndex: 4 },
