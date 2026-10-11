@@ -4,11 +4,14 @@ import { useRouter } from 'expo-router'
 import { useTheme } from '../providers'
 import type { ReactElement } from 'react'
 
-export const ScreenHeader = ({ title, back = true, action }: { title: string; back?: boolean; action?: 'settings' | 'folders' | 'recycle' }): ReactElement => {
+type HeaderAction = 'settings' | 'folders' | 'recycle'
+const labels: Record<HeaderAction, string> = { settings: 'الإعدادات', folders: 'المجلدات', recycle: 'سلة المحذوفات' }
+
+export const ScreenHeader = ({ title, back = true, action, secondaryAction }: { title: string; back?: boolean; action?: HeaderAction; secondaryAction?: HeaderAction }): ReactElement => {
   const router = useRouter(); const { palette } = useTheme()
-  const icon = action === 'settings' ? <Settings size={19} color={palette.muted} /> : action === 'folders' ? <Folder size={19} color={palette.muted} /> : <Trash2 size={19} color={palette.muted} />
-  return <View style={styles.row}>{back ? <Pressable onPress={() => router.back()} style={styles.back}><ArrowRight size={19} color={palette.muted} /><Text style={[styles.backText, { color: palette.muted }]}>رجوع</Text></Pressable> : <View style={styles.side} />}<Text style={[styles.title, { color: palette.text }]}>{title}</Text>{action ? <Pressable accessibilityLabel={action === 'settings' ? 'الإعدادات' : action === 'folders' ? 'المجلدات' : 'سلة المحذوفات'} onPress={() => router.push(action === 'settings' ? '/settings' : action === 'folders' ? '/folders' : '/recycle-bin')} style={[styles.icon, { backgroundColor: palette.surface, borderColor: palette.border }]}>{icon}</Pressable> : <View style={styles.side} />}</View>
+  const renderAction = (value: HeaderAction): ReactElement => { const icon = value === 'settings' ? <Settings size={19} color={palette.muted} /> : value === 'folders' ? <Folder size={19} color={palette.muted} /> : <Trash2 size={19} color={palette.muted} />; const route = value === 'settings' ? '/settings' : value === 'folders' ? '/folders' : '/recycle-bin'; return <Pressable key={value} accessibilityLabel={labels[value]} onPress={() => router.push(route)} style={[styles.icon, { backgroundColor: palette.surface, borderColor: palette.border }]}>{icon}</Pressable> }
+  return <View style={styles.row}>{back ? <Pressable onPress={() => router.back()} style={styles.back}><ArrowRight size={19} color={palette.muted} /><Text style={[styles.backText, { color: palette.muted }]}>رجوع</Text></Pressable> : <View style={styles.side} />}<Text style={[styles.title, { color: palette.text }]}>{title}</Text><View style={styles.actions}>{action && renderAction(action)}{secondaryAction && renderAction(secondaryAction)}</View></View>
 }
 
-const styles = StyleSheet.create({ row: { height: 50, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }, title: { fontFamily: 'Tajawal_700Bold', fontSize: 25 }, back: { flexDirection: 'row', alignItems: 'center', gap: 8, minWidth: 70 }, backText: { fontFamily: 'Tajawal_700Bold', fontSize: 15 }, icon: { width: 42, height: 42, borderRadius: 14, borderWidth: 1, alignItems: 'center', justifyContent: 'center' }, side: { width: 70 },
+const styles = StyleSheet.create({ row: { minHeight: 50, flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 18 }, title: { flex: 1, fontFamily: 'Tajawal_700Bold', fontSize: 25, textAlign: 'center', writingDirection: 'rtl' }, back: { flexDirection: 'row', alignItems: 'center', gap: 8, minWidth: 70 }, backText: { fontFamily: 'Tajawal_700Bold', fontSize: 15, textAlign: 'right', writingDirection: 'rtl' }, actions: { flexDirection: 'row', alignItems: 'center', gap: 8 }, icon: { width: 42, height: 42, borderRadius: 14, borderWidth: 1, alignItems: 'center', justifyContent: 'center' }, side: { width: 70 },
 })

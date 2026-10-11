@@ -1,4 +1,5 @@
 import { Modal, Pressable, StyleSheet, Text, TextInput, View, type TextInputProps } from 'react-native'
+import { Plus, Sparkles } from 'lucide-react-native'
 import type { ReactElement, ReactNode } from 'react'
 import { useTheme } from '../providers'
 import { shadows } from '../theme'
@@ -15,7 +16,8 @@ export const Checkbox = ({ checked, onPress, label }: { checked: boolean; onPres
 
 export const FAB = ({ label, onPress, side = 'start' }: { label: string; onPress: () => void; side?: 'start' | 'end' }): ReactElement => {
   const { palette } = useTheme()
-  return <Pressable accessibilityLabel={label} onPress={onPress} style={({ pressed }) => [styles.fab, side === 'start' ? { start: 18 } : { end: 18 }, { backgroundColor: palette.accent }, shadows.fab, pressed && styles.pressed]}><Text style={styles.fabText}>{label}</Text></Pressable>
+  const isNew = side === 'start'
+  return <Pressable accessibilityLabel={label} onPress={onPress} style={({ pressed }) => [styles.fab, isNew ? { start: 18, backgroundColor: palette.surface, borderColor: palette.border, borderWidth: 1 } : { end: 18, backgroundColor: palette.accent }, shadows.fab, pressed && styles.pressed]}>{isNew ? <Plus size={25} color={palette.accent} /> : <Sparkles size={21} color="#FFFFFF" />}</Pressable>
 }
 
 export const BottomNav = ({ active, onChange }: { active: 'notes' | 'tasks'; onChange: (value: 'notes' | 'tasks') => void }): ReactElement => {
@@ -34,7 +36,6 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   checkbox: { width: 22, height: 22, borderRadius: 7, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
   fab: { position: 'absolute', bottom: 84, width: 52, height: 52, borderRadius: 18, alignItems: 'center', justifyContent: 'center', zIndex: 4 },
-  fabText: { color: '#FFFFFF', fontSize: 24, fontFamily: 'Tajawal_700Bold' },
   bottomNav: { height: 60, marginHorizontal: 12, marginBottom: 12, padding: 5, borderWidth: 1, borderRadius: 20, flexDirection: 'row', gap: 5 },
   navItem: { flex: 1, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
   toast: { position: 'absolute', bottom: 82, start: 18, end: 18, borderRadius: 13, padding: 12, alignItems: 'center', zIndex: 12 },
