@@ -5,6 +5,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Input } from '../src/components/Controls'
 import { Chip, IconButton } from '../src/components/Primitives'
+import { HorizontalScrollRow } from '../src/components/HorizontalScrollRow'
 import { ScreenHeader } from '../src/components/ScreenHeader'
 import { TabsShell } from '../src/components/TabsShell'
 import { useAppState } from '../src/appState'
@@ -12,7 +13,7 @@ import { useTheme } from '../src/providers'
 import { formatNoteDate } from '../src/data'
 import type { Note } from '../src/domain'
 
-const folders = (selected: string, names: { id: string; name: string }[], onSelect: (id: string) => void, _palette: { accent: string; surface: string; border: string; muted: string }): ReactElement => <View style={styles.chips}>{[['all', 'الكل'], ...names.map((folder) => [folder.id, folder.name]), ['uncategorized', 'غير مصنف']].map(([id, label]) => <Chip key={id} label={label} active={selected === id} onPress={() => onSelect(id)} />)}</View>
+const folders = (selected: string, names: { id: string; name: string }[], onSelect: (id: string) => void, _palette: { accent: string; surface: string; border: string; muted: string }): ReactElement => <HorizontalScrollRow style={styles.chips}>{[['all', 'الكل'], ...names.map((folder) => [folder.id, folder.name]), ['uncategorized', 'غير مصنف']].map(([id, label]) => <Chip key={id} label={label} active={selected === id} onPress={() => onSelect(id)} />)}</HorizontalScrollRow>
 
 export default function NotesScreen(): ReactElement {
   const { notes, folders: folderList } = useAppState(); const { palette } = useTheme(); const router = useRouter(); const insets = useSafeAreaInsets(); const params = useLocalSearchParams<{ folder?: string }>()

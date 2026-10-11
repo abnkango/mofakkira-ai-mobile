@@ -19,7 +19,7 @@ export const Card = ({ children, style }: { children: ReactNode; style?: StylePr
 
 export const Chip = ({ label, active, onPress }: { label: string; active?: boolean; onPress: () => void }): ReactElement => {
   const { palette } = useTheme()
-  return <Pressable onPress={onPress} style={({ pressed }) => [styles.chip, { backgroundColor: active ? palette.accent : palette.surface, borderColor: active ? palette.accent : palette.border }, pressed && styles.pressed]}><Text style={{ color: active ? '#FFFFFF' : palette.muted, fontFamily: 'Tajawal_700Bold' }}>{label}</Text></Pressable>
+  return <Pressable onPress={onPress} style={({ pressed }) => [styles.chip, { backgroundColor: active ? palette.accent : palette.surface, borderColor: active ? palette.accent : palette.border }, pressed && styles.pressed]}><Text numberOfLines={1} style={{ color: active ? '#FFFFFF' : palette.muted, fontFamily: 'Tajawal_700Bold' }}>{label}</Text></Pressable>
 }
 
 const styles = StyleSheet.create({
