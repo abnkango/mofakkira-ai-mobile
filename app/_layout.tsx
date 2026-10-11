@@ -9,6 +9,7 @@ import * as SplashScreen from 'expo-splash-screen'
 import { useFonts, Tajawal_400Regular, Tajawal_500Medium, Tajawal_700Bold } from '@expo-google-fonts/tajawal'
 import { AppProviders, useTheme } from '../src/providers'
 import { AppStateProvider } from '../src/appState'
+import { goBackOrNotes } from '../src/navigation'
 
 SplashScreen.preventAutoHideAsync().catch(() => undefined)
 
@@ -19,7 +20,7 @@ const Navigation = (): ReactElement => {
 
 const AndroidBackHandler = (): null => {
   const pathname = usePathname(); const router = useRouter()
-  useEffect(() => BackHandler.addEventListener('hardwareBackPress', () => { if (pathname === '/notes' || pathname === '/') return false; router.back(); return true }).remove, [pathname, router])
+  useEffect(() => BackHandler.addEventListener('hardwareBackPress', () => { if (pathname === '/notes' || pathname === '/') return false; goBackOrNotes(router); return true }).remove, [pathname, router])
   return null
 }
 
