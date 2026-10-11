@@ -19,7 +19,7 @@ export const Card = ({ children, style }: { children: ReactNode; style?: StylePr
 
 export const Chip = ({ label, active, onPress }: { label: string; active?: boolean; onPress: () => void }): ReactElement => {
   const { palette } = useTheme()
-  return <Pressable onPress={onPress} style={({ pressed }) => [styles.chip, { backgroundColor: active ? palette.accent : palette.surface, borderColor: active ? palette.accent : palette.border }, pressed && styles.pressed]}><Text numberOfLines={1} style={{ color: active ? '#FFFFFF' : palette.muted, fontFamily: 'Tajawal_700Bold' }}>{label}</Text></Pressable>
+  return <Pressable onPress={onPress} style={({ pressed }) => [styles.chip, { backgroundColor: active ? palette.accent : palette.surface, borderColor: active ? palette.accent : palette.border }, pressed && styles.pressed]}><Text numberOfLines={1} style={[styles.chipText, { color: active ? '#FFFFFF' : palette.muted }]}>{label}</Text></Pressable>
 }
 
 const styles = StyleSheet.create({
@@ -27,6 +27,7 @@ const styles = StyleSheet.create({
   buttonText: { fontFamily: 'Tajawal_700Bold', fontSize: 15 },
   iconButton: { width: 42, height: 42, borderRadius: 14, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   card: { borderWidth: 1, borderRadius: 16 },
-  chip: { borderWidth: 1, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 9 },
+  chip: { minHeight: 40, borderWidth: 1, borderRadius: 999, paddingHorizontal: 14, alignItems: 'center', justifyContent: 'center' },
+  chipText: { fontFamily: 'Tajawal_700Bold', fontSize: 14, lineHeight: 22, textAlign: 'right', writingDirection: 'rtl' },
   pressed: { opacity: 0.75 },
 })
