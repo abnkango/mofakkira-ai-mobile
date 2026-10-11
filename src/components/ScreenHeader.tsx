@@ -1,16 +1,16 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native'
-import { ArchiveRestore, ArrowRight, Folder, Recycle, Settings } from 'lucide-react-native'
+import { ArchiveRestore, ArrowRight, Folder, Settings } from 'lucide-react-native'
 import { useRouter } from 'expo-router'
 import { useTheme } from '../providers'
 import type { ReactElement } from 'react'
 import { useGoBackOrNotes } from '../navigation'
 
-type HeaderAction = 'settings' | 'folders' | 'recycle' | 'recycle-symbol'
-const labels: Record<HeaderAction, string> = { settings: 'الإعدادات', folders: 'المجلدات', recycle: 'سلة المحذوفات', 'recycle-symbol': 'سلة المحذوفات' }
+type HeaderAction = 'settings' | 'folders' | 'recycle'
+const labels: Record<HeaderAction, string> = { settings: 'الإعدادات', folders: 'المجلدات', recycle: 'سلة المحذوفات' }
 
 export const ScreenHeader = ({ title, back = true, action, secondaryAction }: { title: string; back?: boolean; action?: HeaderAction; secondaryAction?: HeaderAction }): ReactElement => {
   const router = useRouter(); const goBack = useGoBackOrNotes(); const { palette } = useTheme()
-  const renderAction = (value: HeaderAction): ReactElement => { const icon = value === 'settings' ? <Settings size={19} color={palette.muted} /> : value === 'folders' ? <Folder size={19} color={palette.muted} /> : value === 'recycle-symbol' ? <Recycle size={19} color={palette.muted} /> : <ArchiveRestore size={19} color={palette.muted} />; const route = value === 'settings' ? '/settings' : value === 'folders' ? '/folders' : '/recycle-bin'; return <Pressable key={value} accessibilityLabel={labels[value]} onPress={() => router.push(route)} style={[styles.icon, { backgroundColor: palette.surface, borderColor: palette.border }]}>{icon}</Pressable> }
+  const renderAction = (value: HeaderAction): ReactElement => { const icon = value === 'settings' ? <Settings size={19} color={palette.muted} /> : value === 'folders' ? <Folder size={19} color={palette.muted} /> : <ArchiveRestore size={19} color={palette.muted} />; const route = value === 'settings' ? '/settings' : value === 'folders' ? '/folders' : '/recycle-bin'; return <Pressable key={value} accessibilityLabel={labels[value]} onPress={() => router.push(route)} style={[styles.icon, { backgroundColor: palette.surface, borderColor: palette.border }]}>{icon}</Pressable> }
   return <View style={styles.row}>{back ? <Pressable onPress={goBack} style={styles.back}><ArrowRight size={19} color={palette.muted} /><Text style={[styles.backText, { color: palette.muted }]}>رجوع</Text></Pressable> : <View style={styles.side} />}<Text pointerEvents="none" style={[styles.title, { color: palette.text }]}>{title}</Text><View style={styles.actions}>{action && renderAction(action)}{secondaryAction && renderAction(secondaryAction)}</View></View>
 }
 
