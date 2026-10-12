@@ -11,8 +11,8 @@ import { useAppState } from '../src/appState'
 import { useTheme } from '../src/providers'
 
 export default function FoldersScreen(): ReactElement {
-  const { folders, notes, addFolder, renameFolder, deleteFolder } = useAppState(); const { palette } = useTheme(); const router = useRouter(); const insets = useSafeAreaInsets(); const [newOpen, setNewOpen] = useState(false); const [name, setName] = useState(''); const [renameTarget, setRenameTarget] = useState<{ id: string; name: string } | null>(null); const [renameName, setRenameName] = useState('')
-  const count = (id: string): number => notes.filter((note) => !note.deletedAt && (id === 'all' ? true : id === 'uncategorized' ? note.folderId === null : note.folderId === id)).length
+  const { folders, noteCounts, addFolder, renameFolder, deleteFolder } = useAppState(); const { palette } = useTheme(); const router = useRouter(); const insets = useSafeAreaInsets(); const [newOpen, setNewOpen] = useState(false); const [name, setName] = useState(''); const [renameTarget, setRenameTarget] = useState<{ id: string; name: string } | null>(null); const [renameName, setRenameName] = useState('')
+  const count = (id: string): number => noteCounts[id] ?? 0
   const items = [{ id: 'all', name: 'الكل' }, ...folders, { id: 'uncategorized', name: 'غير مصنف' }]
   const create = async (): Promise<void> => { if (name.trim()) { await addFolder(name); setName(''); setNewOpen(false) } }
   const menu = (folder: { id: string; name: string }): void => Alert.alert(folder.name, undefined, [{ text: 'إعادة تسمية', onPress: () => { setRenameTarget(folder); setRenameName(folder.name) } }, { text: 'حذف', style: 'destructive', onPress: () => Alert.alert('حذف المجلد؟', 'ستنتقل ملاحظات هذا المجلد إلى غير مصنف', [{ text: 'إلغاء', style: 'cancel' }, { text: 'حذف', style: 'destructive', onPress: () => { void deleteFolder(folder.id) } }]) }, { text: 'إلغاء', style: 'cancel' }])
