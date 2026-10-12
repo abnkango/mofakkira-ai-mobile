@@ -10,7 +10,14 @@
       "package": "com.mofakkira.ai.mobile",
       "softwareKeyboardLayoutMode": "resize"
     },
-    "plugins": ["expo-router", "expo-secure-store", "expo-updates"],
-    "experiments": { "typedRoutes": true }
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-updates",
+      "expo-sqlite"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
   }
 }
