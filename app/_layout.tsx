@@ -11,15 +11,17 @@ import { AppProviders, useTheme } from '../src/providers'
 import { AppStateProvider, useAppState } from '../src/appState'
 import { goBackOrNotes } from '../src/navigation'
 import { initializeDatabase } from '../src/data/database'
+import { Toast } from '../src/components/Controls'
 
 SplashScreen.preventAutoHideAsync().catch(() => undefined)
 
 const Navigation = (): ReactElement => {
   const { palette } = useTheme()
-  const { ready, error } = useAppState()
+  const { ready, error, operationError, clearOperationError } = useAppState()
+  useEffect(() => { if (!operationError) return; const timer = setTimeout(clearOperationError, 2600); return () => clearTimeout(timer) }, [clearOperationError, operationError])
   if (error) return <View style={{ flex: 1, backgroundColor: palette.bg, alignItems: 'center', justifyContent: 'center', padding: 24 }}><Text style={{ color: palette.text, fontFamily: 'Tajawal_700Bold', fontSize: 18, textAlign: 'center' }}>تعذر تحميل بيانات المفكرة</Text><Text style={{ color: palette.muted, fontFamily: 'Tajawal_400Regular', marginTop: 10, textAlign: 'center' }}>{error}</Text></View>
   if (!ready) return <View style={{ flex: 1, backgroundColor: palette.bg }} />
-  return <><AndroidBackHandler /><StatusBar style={palette.bg === '#151614' ? 'light' : 'dark'} /><Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: palette.bg } }} /></>
+  return <><AndroidBackHandler /><StatusBar style={palette.bg === '#151614' ? 'light' : 'dark'} /><Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: palette.bg } }} />{operationError && <Toast message={operationError} />}</>
 }
 
 const AndroidBackHandler = (): null => {
