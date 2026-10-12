@@ -12,6 +12,6 @@ export const TabsShell = ({ children }: PropsWithChildren): ReactElement => {
   const { palette } = useTheme()
   const { createNote } = useAppState()
   const active = path.includes('tasks') ? 'tasks' : 'notes'
-  const createAndOpen = (): void => { const note = createNote(null); router.push(`/note/${note.id}`) }
+  const createAndOpen = async (): Promise<void> => { const note = await createNote(null); router.push(`/note/${note.id}`) }
   return <View style={{ flex: 1, backgroundColor: palette.bg }}><KeyboardAwareView><View style={{ flex: 1 }}>{children}</View></KeyboardAwareView>{active === 'notes' && <FAB label="ملاحظة جديدة" side="start" onPress={createAndOpen} />}<FAB label="المساعد" side="end" onPress={() => router.push({ pathname: '/assistant', params: { from: active } })} /><BottomNav active={active} onChange={(value) => router.replace(`/${value}`)} /></View>
 }

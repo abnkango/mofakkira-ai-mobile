@@ -8,7 +8,7 @@ import { StatusBar } from 'expo-status-bar'
 import * as SplashScreen from 'expo-splash-screen'
 import { useFonts, Tajawal_400Regular, Tajawal_500Medium, Tajawal_700Bold } from '@expo-google-fonts/tajawal'
 import { AppProviders, useTheme } from '../src/providers'
-import { AppStateProvider } from '../src/appState'
+import { AppStateProvider, useAppState } from '../src/appState'
 import { goBackOrNotes } from '../src/navigation'
 import { initializeDatabase } from '../src/data/database'
 
@@ -16,12 +16,15 @@ SplashScreen.preventAutoHideAsync().catch(() => undefined)
 
 const Navigation = (): ReactElement => {
   const { palette } = useTheme()
+  const { ready, error } = useAppState()
+  if (error) return <View style={{ flex: 1, backgroundColor: palette.bg, alignItems: 'center', justifyContent: 'center', padding: 24 }}><Text style={{ color: palette.text, fontFamily: 'Tajawal_700Bold', fontSize: 18, textAlign: 'center' }}>تعذر تحميل بيانات المفكرة</Text><Text style={{ color: palette.muted, fontFamily: 'Tajawal_400Regular', marginTop: 10, textAlign: 'center' }}>{error}</Text></View>
+  if (!ready) return <View style={{ flex: 1, backgroundColor: palette.bg }} />
   return <><AndroidBackHandler /><StatusBar style={palette.bg === '#151614' ? 'light' : 'dark'} /><Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: palette.bg } }} /></>
 }
 
 const AndroidBackHandler = (): null => {
-  const pathname = usePathname(); const router = useRouter()
-  useEffect(() => BackHandler.addEventListener('hardwareBackPress', () => { if (pathname === '/notes' || pathname === '/') return false; goBackOrNotes(router); return true }).remove, [pathname, router])
+  const pathname = usePathname(); const router = useRouter(); const { saveNoteOnExit } = useAppState()
+  useEffect(() => BackHandler.addEventListener('hardwareBackPress', () => { if (pathname === '/notes' || pathname === '/') return false; if (pathname.startsWith('/note/')) { const noteId = pathname.slice('/note/'.length); void saveNoteOnExit(noteId).then(() => goBackOrNotes(router)); return true }; goBackOrNotes(router); return true }).remove, [pathname, router, saveNoteOnExit])
   return null
 }
 
