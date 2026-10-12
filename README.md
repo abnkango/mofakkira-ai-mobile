@@ -4,7 +4,7 @@
 
 ## الحالة
 
-تم إنجاز **Phase 0 – Audit** و**Phase 1 – Foundation** و**Phase 2 – Screens** و**Phase 3 – Verification**. راجع [`docs/PORTING_AUDIT.md`](docs/PORTING_AUDIT.md) للتدقيق والقرارات الملزمة، و[`docs/PARITY_REPORT.md`](docs/PARITY_REPORT.md) لنتائج التحقق والاختلافات.
+تم إنجاز **Phase 0 – Audit** و**Phase 1 – Foundation** و**Phase 2 – Screens** و**Phase 3 – Verification** و**Phase 4 – Persistent SQLite Data Layer**. راجع [`docs/PORTING_AUDIT.md`](docs/PORTING_AUDIT.md) للتدقيق والقرارات الملزمة، و[`docs/PARITY_REPORT.md`](docs/PARITY_REPORT.md) لنتائج التحقق والاختلافات، و[`docs/DATA_LAYER.md`](docs/DATA_LAYER.md) للمخطط والقواعد.
 
 ## Expo SDK
 
@@ -26,7 +26,7 @@
 - الالتزام المدقق: `a9a97f454e767a3da2c33e79c5b47f4699d57432`
 - النموذج المنشور: https://abnkango.github.io/mofakkira-ai/
 
-إصدار Expo SDK الدقيق وخطوات Termux + Expo Go ستُثبت هنا بعد اكتمال scaffold واختيار الإصدار المدعوم من Expo Go الحالي.
+إصدار Expo SDK المستخدم هو **57.0.27**، ونسخة `expo-sqlite` هي **57.0.4** المطابقة لـSDK 57. خطوات Termux + Expo Go أعلاه هي مسار التشغيل الحالي.
 
 ## قرارات RTL وAndroid المعتمدة
 
@@ -47,7 +47,7 @@
 
 ## حالة التحقق النهائية
 
-`npx tsc --noEmit` و`npx expo lint` و`npx expo-doctor` و`npx expo export --platform android` تمر بنجاح. لم يُشغّل التطبيق على هاتف Android فعلي من هذه البيئة؛ راجع تقرير parity لقائمة الاختبارات غير المتحققة.
+`npx tsc --noEmit` و`npx expo lint` و`npx expo export --platform android` تمر بنجاح. قاعدة البيانات الدائمة تستخدم SQLite، ويبدأ التثبيت الجديد بلا ملاحظات أو مجلدات أو مهام مثال. لم يُشغّل التطبيق على هاتف Android فعلي من هذه البيئة؛ راجع [`docs/DATA_LAYER_TEST_PLAN.md`](docs/DATA_LAYER_TEST_PLAN.md) للاختبارات اليدوية.
 
 ## بنود اختبار عند أول APK
 
