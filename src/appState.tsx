@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState, type PropsWithChildren, type ReactElement } from 'react'
-import { assistantMock, foldersRepo, isEmptyNote, nextUpdatedAt, notesRepo, resetDatabase, settingsRepo, tasksRepo } from './data/index'
+import { foldersRepo, isEmptyNote, nextUpdatedAt, notesRepo, resetDatabase, settingsRepo, tasksRepo } from './data/index'
 import type { AIProvider, Folder, Note, Task } from './domain'
 import { useSettings } from './providers'
 
@@ -31,7 +31,6 @@ export type AppStateValue = {
   resetData: () => Promise<void>
   saveApiKey: (value: string, provider?: AIProvider) => Promise<void>
   deleteApiKey: (provider?: AIProvider) => Promise<void>
-  assistantReply: (text: string) => string
 }
 
 const AppStateContext = createContext<AppStateValue | null>(null)
@@ -62,7 +61,7 @@ export const AppStateProvider = ({ children }: PropsWithChildren): ReactElement 
     const toggleTask = async (taskId: string): Promise<void> => { const current = tasks.find((task) => task.id === taskId); if (!current) return; await persist('tasks.toggle', () => tasksRepo.toggle(taskId, !current.done)); setTasks((items) => items.map((task) => task.id === taskId ? { ...task, done: !task.done } : task)) }
     const deleteTask = async (taskId: string): Promise<void> => { await persist('tasks.remove', () => tasksRepo.remove(taskId)); setTasks((items) => items.filter((task) => task.id !== taskId)) }
     const resetData = async (): Promise<void> => { await persist('database.reset', () => resetDatabase()); draftIds.current.clear(); noteSnapshots.current.clear(); setNotes([]); setFolders([]); setTasks([]); setNoteCounts({}) }
-    return { ready, error, operationError, clearOperationError: () => setOperationError(null), notes, folders, selectedNotesFolderId, setSelectedNotesFolderId, tasks, noteCounts, apiKey, createNote, updateNote, saveNoteOnExit, moveNote, deleteNote, restoreNote, permanentlyDeleteNote, addFolder, renameFolder, deleteFolder, addTask, toggleTask, deleteTask, resetData, saveApiKey: async (valueToSave: string, keyProvider: AIProvider = provider) => { const clean = valueToSave.trim(); await persist('saveApiKey', () => settingsRepo.saveApiKey(clean, keyProvider)); if (keyProvider === provider) setApiKey(clean) }, deleteApiKey: async (keyProvider: AIProvider = provider) => { await persist('deleteApiKey', () => settingsRepo.deleteApiKey(keyProvider)); if (keyProvider === provider) setApiKey('') }, assistantReply: (text: string) => assistantMock(text, tasks.filter((task) => !task.done).map((task) => task.text)) }
+    return { ready, error, operationError, clearOperationError: () => setOperationError(null), notes, folders, selectedNotesFolderId, setSelectedNotesFolderId, tasks, noteCounts, apiKey, createNote, updateNote, saveNoteOnExit, moveNote, deleteNote, restoreNote, permanentlyDeleteNote, addFolder, renameFolder, deleteFolder, addTask, toggleTask, deleteTask, resetData, saveApiKey: async (valueToSave: string, keyProvider: AIProvider = provider) => { const clean = valueToSave.trim(); await persist('saveApiKey', () => settingsRepo.saveApiKey(clean, keyProvider)); if (keyProvider === provider) setApiKey(clean) }, deleteApiKey: async (keyProvider: AIProvider = provider) => { await persist('deleteApiKey', () => settingsRepo.deleteApiKey(keyProvider)); if (keyProvider === provider) setApiKey('') } }
   }, [apiKey, folders, notes, noteCounts, operationError, ready, tasks, error, provider, selectedNotesFolderId])
 
   return <AppStateContext.Provider value={value}>{children}</AppStateContext.Provider>
