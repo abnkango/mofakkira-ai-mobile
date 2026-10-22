@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState, type PropsWithChildren, type ReactElement } from 'react'
 import { assistantMock, foldersRepo, isEmptyNote, nextUpdatedAt, notesRepo, resetDatabase, settingsRepo, tasksRepo } from './data/index'
-import type { Folder, Note, Task } from './domain'
+import type { AIProvider, Folder, Note, Task } from './domain'
+import { useSettings } from './providers'
 
 export type AppStateValue = {
   ready: boolean
@@ -26,8 +27,8 @@ export type AppStateValue = {
   toggleTask: (id: string) => Promise<void>
   deleteTask: (id: string) => Promise<void>
   resetData: () => Promise<void>
-  saveApiKey: (value: string) => Promise<void>
-  deleteApiKey: () => Promise<void>
+  saveApiKey: (value: string, provider?: AIProvider) => Promise<void>
+  deleteApiKey: (provider?: AIProvider) => Promise<void>
   assistantReply: (text: string) => string
 }
 
@@ -36,8 +37,10 @@ const now = (): number => Date.now()
 const id = (prefix: string): string => `${prefix}-${now()}-${Math.random().toString(36).slice(2, 7)}`
 
 export const AppStateProvider = ({ children }: PropsWithChildren): ReactElement => {
+  const { provider } = useSettings()
   const [ready, setReady] = useState(false); const [error, setError] = useState<string | null>(null); const [operationError, setOperationError] = useState<string | null>(null); const [notes, setNotes] = useState<Note[]>([]); const [folders, setFolders] = useState<Folder[]>([]); const [tasks, setTasks] = useState<Task[]>([]); const [noteCounts, setNoteCounts] = useState<Record<string, number>>({}); const [apiKey, setApiKey] = useState(''); const draftIds = useRef(new Set<string>()); const noteQueues = useRef(new Map<string, Promise<void>>()); const noteSnapshots = useRef(new Map<string, Pick<Note, 'title' | 'body' | 'updatedAt'>>())
-  useEffect(() => { void (async () => { try { await notesRepo.purgeExpired(); await notesRepo.removeEmptyLive(); const [loadedNotes, loadedFolders, loadedTasks, loadedKey] = await Promise.all([notesRepo.list(), foldersRepo.list(), tasksRepo.list(), settingsRepo.readApiKey()]); const countRows = await Promise.all([notesRepo.count(), notesRepo.count(null), ...loadedFolders.map((folder) => notesRepo.count(folder.id))]); noteSnapshots.current = new Map(loadedNotes.map((note) => [note.id, { title: note.title, body: note.body, updatedAt: note.updatedAt }])); setNotes(loadedNotes); setFolders(loadedFolders); setTasks(loadedTasks); setNoteCounts({ all: countRows[0], uncategorized: countRows[1], ...Object.fromEntries(loadedFolders.map((folder, index) => [folder.id, countRows[index + 2]])) }); setApiKey(loadedKey); setReady(true) } catch (cause) { console.error('[mofakkira] app state initialization failed', cause); setError(cause instanceof Error ? cause.message : 'تعذر تحميل البيانات') } })() }, [])
+  useEffect(() => { void (async () => { try { await notesRepo.purgeExpired(); await notesRepo.removeEmptyLive(); const [loadedNotes, loadedFolders, loadedTasks] = await Promise.all([notesRepo.list(), foldersRepo.list(), tasksRepo.list()]); const countRows = await Promise.all([notesRepo.count(), notesRepo.count(null), ...loadedFolders.map((folder) => notesRepo.count(folder.id))]); noteSnapshots.current = new Map(loadedNotes.map((note) => [note.id, { title: note.title, body: note.body, updatedAt: note.updatedAt }])); setNotes(loadedNotes); setFolders(loadedFolders); setTasks(loadedTasks); setNoteCounts({ all: countRows[0], uncategorized: countRows[1], ...Object.fromEntries(loadedFolders.map((folder, index) => [folder.id, countRows[index + 2]])) }); setReady(true) } catch (cause) { console.error('[mofakkira] app state initialization failed', cause); setError(cause instanceof Error ? cause.message : 'تعذر تحميل البيانات') } })() }, [])
+  useEffect(() => { let active = true; void settingsRepo.readApiKey(provider).then((key) => { if (active) setApiKey(key) }).catch(() => { if (active) setApiKey('') }); return () => { active = false } }, [provider])
 
   const value = useMemo<AppStateValue>(() => {
     const persist = async <T,>(operation: string, action: () => Promise<T>): Promise<T> => { try { return await action() } catch (cause) { console.error(`[mofakkira] ${operation} failed`, cause); setOperationError('تعذر حفظ التغيير. حاول مرة أخرى.'); throw cause } }
@@ -57,8 +60,8 @@ export const AppStateProvider = ({ children }: PropsWithChildren): ReactElement 
     const toggleTask = async (taskId: string): Promise<void> => { const current = tasks.find((task) => task.id === taskId); if (!current) return; await persist('tasks.toggle', () => tasksRepo.toggle(taskId, !current.done)); setTasks((items) => items.map((task) => task.id === taskId ? { ...task, done: !task.done } : task)) }
     const deleteTask = async (taskId: string): Promise<void> => { await persist('tasks.remove', () => tasksRepo.remove(taskId)); setTasks((items) => items.filter((task) => task.id !== taskId)) }
     const resetData = async (): Promise<void> => { await persist('database.reset', () => resetDatabase()); draftIds.current.clear(); noteSnapshots.current.clear(); setNotes([]); setFolders([]); setTasks([]); setNoteCounts({}) }
-    return { ready, error, operationError, clearOperationError: () => setOperationError(null), notes, folders, tasks, noteCounts, apiKey, createNote, updateNote, saveNoteOnExit, moveNote, deleteNote, restoreNote, permanentlyDeleteNote, addFolder, renameFolder, deleteFolder, addTask, toggleTask, deleteTask, resetData, saveApiKey: async (valueToSave: string) => { const clean = valueToSave.trim(); await persist('saveApiKey', () => settingsRepo.saveApiKey(clean)); setApiKey(clean) }, deleteApiKey: async () => { await persist('deleteApiKey', () => settingsRepo.deleteApiKey()); setApiKey('') }, assistantReply: (text: string) => assistantMock(text, tasks.filter((task) => !task.done).map((task) => task.text)) }
-  }, [apiKey, folders, notes, noteCounts, operationError, ready, tasks, error])
+    return { ready, error, operationError, clearOperationError: () => setOperationError(null), notes, folders, tasks, noteCounts, apiKey, createNote, updateNote, saveNoteOnExit, moveNote, deleteNote, restoreNote, permanentlyDeleteNote, addFolder, renameFolder, deleteFolder, addTask, toggleTask, deleteTask, resetData, saveApiKey: async (valueToSave: string, keyProvider: AIProvider = provider) => { const clean = valueToSave.trim(); await persist('saveApiKey', () => settingsRepo.saveApiKey(clean, keyProvider)); if (keyProvider === provider) setApiKey(clean) }, deleteApiKey: async (keyProvider: AIProvider = provider) => { await persist('deleteApiKey', () => settingsRepo.deleteApiKey(keyProvider)); if (keyProvider === provider) setApiKey('') }, assistantReply: (text: string) => assistantMock(text, tasks.filter((task) => !task.done).map((task) => task.text)) }
+  }, [apiKey, folders, notes, noteCounts, operationError, ready, tasks, error, provider])
 
   return <AppStateContext.Provider value={value}>{children}</AppStateContext.Provider>
 }
