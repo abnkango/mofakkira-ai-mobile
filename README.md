@@ -4,11 +4,15 @@
 
 ## الحالة
 
-تم إنجاز **Phase 0 – Audit** و**Phase 1 – Foundation** و**Phase 2 – Screens** و**Phase 3 – Verification** و**Phase 4 – Persistent SQLite Data Layer**. راجع [`docs/PORTING_AUDIT.md`](docs/PORTING_AUDIT.md) للتدقيق والقرارات الملزمة، و[`docs/PARITY_REPORT.md`](docs/PARITY_REPORT.md) لنتائج التحقق والاختلافات، و[`docs/DATA_LAYER.md`](docs/DATA_LAYER.md) للمخطط والقواعد.
+تم إنجاز **Phase 0 – Audit** و**Phase 1 – Foundation** و**Phase 2 – Screens** و**Phase 3 – Verification** و**Phase 4 – Persistent SQLite Data Layer**، وأُضيف المساعد الحقيقي عبر OpenAI-compatible API مع استرجاع الملاحظات واستخراج المهام. راجع [`docs/PORTING_AUDIT.md`](docs/PORTING_AUDIT.md) للتدقيق والقرارات الملزمة، و[`docs/PARITY_REPORT.md`](docs/PARITY_REPORT.md) لنتائج التحقق والاختلافات، و[`docs/DATA_LAYER.md`](docs/DATA_LAYER.md) للمخطط والقواعد، و[`docs/ASSISTANT.md`](docs/ASSISTANT.md) لبنية المساعد وسياسة الخصوصية، و[`docs/ASSISTANT_TEST_PLAN.md`](docs/ASSISTANT_TEST_PLAN.md) للاختبارات اليدوية.
 
 ## Expo SDK
 
 يستخدم المشروع **Expo SDK 57.0.27** مع Expo Router `~57.0.25` وReact Native `0.86.3`. ثبّت حزم Expo الجديدة دائمًا عبر `npx expo install` حتى يطابق الإصدار SDK.
+
+## المساعد ومزودو الذكاء الاصطناعي
+
+يدعم المساعد Gemini وGroq ومزود OpenAI-compatible مخصصًا. أسماء النماذج قابلة للتعديل من الإعدادات، ولكل مزود مفتاحه المستقل في SecureStore. الافتراضي في Gemini هو `gemini-3.5-flash-lite`؛ والافتراضي في Groq هو `openai/gpt-oss-20b`. يرسل المساعد نص السؤال وبعض الملاحظات ذات الصلة إلى المزود بعد إشعار الخصوصية. يظل سجل المحادثة في الذاكرة فقط. راجع [`docs/ASSISTANT.md`](docs/ASSISTANT.md) لمعرفة حدود البيانات وسياسة الأخطاء والروابط المصدرية.
 
 ## التشغيل على الهاتف: Termux + Expo Go
 
