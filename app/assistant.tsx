@@ -20,6 +20,7 @@ type Message = { id: string; role: 'user' | 'assistant'; text: string; sourceIds
 const suggestions = ['ما المهام غير المنجزة؟', 'لخّص ملاحظات هذا المجلد', 'على ماذا أركز اليوم؟']
 const noNotesText = 'لا توجد ملاحظات في هذا النطاق بعد.'
 const welcomeMessage: Message = { id: 'welcome', role: 'assistant', text: 'مرحباً، أنا هنا لأساعدك على ترتيب أفكارك وتحويلها إلى خطوات.' }
+const clockNow = (): number => Date.now()
 
 export default function AssistantScreen(): ReactElement {
   const { from } = useLocalSearchParams<{ from?: string }>(); const router = useRouter(); const goBack = useGoBackOrNotes(); const { notes, folders, apiKey, selectedNotesFolderId, chatMessages, addChatMessage, purgeChatHistory } = useAppState(); const settings = useSettings(); const updateSettings = useUpdateSettings(); const { palette } = useTheme(); const insets = useSafeAreaInsets(); const [scope, setScope] = useState<'folder' | 'all'>(from === 'tasks' ? 'all' : 'folder'); const [value, setValue] = useState(''); const [loading, setLoading] = useState(false); const [keyboardVisible, setKeyboardVisible] = useState(false); const [temporaryMessages, setTemporaryMessages] = useState<Message[]>([]); const listRef = useRef<FlatList<Message>>(null); const controllerRef = useRef<AbortController | null>(null); const mounted = useRef(true); const opened = useRef(false)
@@ -37,25 +38,34 @@ export default function AssistantScreen(): ReactElement {
     const controller = new AbortController(); controllerRef.current?.abort(); controllerRef.current = controller
     setLoading(true)
     let userMessageId = retryUserMessageId
+    const metrics = __DEV__ ? { startedAt: clockNow(), path: 'single' as 'single' | 'two-step', scopeNotes: 0, titlesSent: 0, selectedIds: 0, charsSent: 0, calls: 0 } : null
     try {
       if (includeUser) userMessageId = (await addChatMessage('user', question)).id
       const scopeFilter = { mode: scope, selectedFolderId: selectedNotesFolderId }
       const retrievalCandidates = latestCandidates(notes, folders, scopeFilter, 300)
+      if (metrics) metrics.scopeNotes = retrievalCandidates.length
       if (!retrievalCandidates.length) { await addChatMessage('assistant', noNotesText, []); return }
       const provider = getProviderConfig(settings)
       const totalContentLength = retrievalCandidates.reduce((total, note) => total + note.title.length + note.body.length, 0)
       const previousSources = [...chatMessages].reverse().find((message) => message.role === 'assistant')?.sources ?? []
+      const path = totalContentLength < 6000 ? 'single' : 'two-step'
+      if (metrics) metrics.path = path
       let selectedNotes: CandidateNote[]
-      if (totalContentLength < 6000) {
+      if (path === 'single') {
         selectedNotes = boundNotes(appendPreviousSourceNotes(retrievalCandidates, previousSources, notes, folders, scopeFilter))
+        if (metrics) { metrics.titlesSent += selectedNotes.length; metrics.charsSent += selectedNotes.reduce((total, note) => total + note.title.length + note.body.length, 0) }
       } else {
+        if (metrics) { metrics.titlesSent += retrievalCandidates.length; metrics.charsSent += retrievalCandidates.reduce((total, note) => total + note.title.length, 0); metrics.calls += 1 }
         const metadataReply = await chat({ ...provider, apiKey, messages: buildMetadataPrompt(question, retrievalCandidates, folders, history), signal: controller.signal, temperature: 0, maxTokens: 1200 })
         const ids = parseRelevantIds(metadataReply, new Set(retrievalCandidates.map((note) => note.id)), 8)
-        if (ids !== null && ids.length === 0) { const answer = await chat({ ...provider, apiKey, messages: buildAnswerMessages(question, [], folders, history), signal: controller.signal, temperature: 0.35, maxTokens: 1400 }); const parsed = parseSourceIds(answer, new Set()); await addChatMessage('assistant', parsed.text, []); return }
+        if (metrics) metrics.selectedIds = ids?.length ?? 0
+        if (ids !== null && ids.length === 0) { if (metrics) metrics.calls += 1; const answer = await chat({ ...provider, apiKey, messages: buildAnswerMessages(question, [], folders, history), signal: controller.signal, temperature: 0.35, maxTokens: 1400 }); const parsed = parseSourceIds(answer, new Set()); await addChatMessage('assistant', parsed.text, []); return }
         const retrieved = ids === null ? localSearchFallback(question, retrievalCandidates, 8) : ids.map((id) => retrievalCandidates.find((note) => note.id === id)).filter((note): note is CandidateNote => Boolean(note))
         selectedNotes = boundNotes(appendPreviousSourceNotes(retrieved, previousSources, notes, folders, scopeFilter))
+        if (metrics) { metrics.titlesSent += selectedNotes.length; metrics.charsSent += selectedNotes.reduce((total, note) => total + note.title.length + note.body.length, 0) }
       }
       if (!selectedNotes.length) { await addChatMessage('assistant', 'لم أجد ملاحظات مرتبطة بهذا السؤال في النطاق المحدد.', []); return }
+      if (metrics) metrics.calls += 1
       const answer = await chat({ ...provider, apiKey, messages: buildAnswerMessages(question, selectedNotes, folders, history), signal: controller.signal, temperature: 0.35, maxTokens: 1400 })
       const validIds = new Set(selectedNotes.map((note) => note.id)); const parsed = parseSourceIds(answer, validIds); const content = parsed.text; const sourceIds = parsed.sourceIds
       await addChatMessage('assistant', content, sourceIds)
@@ -64,6 +74,7 @@ export default function AssistantScreen(): ReactElement {
       const message = error instanceof AssistantError ? error.message : new AssistantError('network').message
       if (mounted.current) setTemporaryMessages((current) => [...current, { id: `error-${userMessageId ?? 'pending'}`, role: 'assistant', text: message, error: true, retryQuestion: question, retryUserMessageId: userMessageId, afterMessageId: userMessageId }])
     } finally {
+      if (metrics) console.info(`[assistant] path=${metrics.path} scopeNotes=${metrics.scopeNotes} titlesSent=${metrics.titlesSent} selectedIds=${metrics.selectedIds} charsSent=${metrics.charsSent} calls=${metrics.calls} contextMsgs=${history.length} durationMs=${clockNow() - metrics.startedAt}`)
       if (controllerRef.current === controller) controllerRef.current = null
       if (mounted.current) setLoading(false)
     }
