@@ -9,16 +9,35 @@
     "android": {
       "package": "com.abnkango.mofakkira",
       "softwareKeyboardLayoutMode": "resize",
-      "versionCode": 1
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icons/adaptive-icon-foreground.png",
+        "backgroundImage": "./assets/icons/adaptive-icon-background.png",
+        "monochromeImage": "./assets/icons/adaptive-icon-monochrome.png",
+        "backgroundColor": "#3c4a38"
+      }
     },
     "plugins": [
       "expo-router",
       "expo-secure-store",
       "expo-updates",
-      "expo-sqlite"
+      "expo-sqlite",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/icons/splash-icon.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#F7F7F5",
+          "dark": {
+            "backgroundColor": "#151614"
+          }
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "icon": "./assets/icons/icon.png"
   }
 }
