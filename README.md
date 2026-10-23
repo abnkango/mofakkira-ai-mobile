@@ -8,13 +8,61 @@
 
 ## Expo SDK
 
-يستخدم المشروع **Expo SDK 57.0.27** مع Expo Router `~57.0.25` وReact Native `0.86.3`. ثبّت حزم Expo الجديدة دائمًا عبر `npx expo install` حتى يطابق الإصدار SDK.
+يستخدم المشروع **Expo SDK 57.0.31** مع Expo Router `~57.0.29` وReact Native `0.86.3`. ثبّت حزم Expo الجديدة دائمًا عبر `npx expo install` حتى يطابق الإصدار SDK.
 
 ## المساعد ومزودو الذكاء الاصطناعي
 
 يدعم المساعد Gemini وGroq ومزود OpenAI-compatible مخصصًا. أسماء النماذج قابلة للتعديل من الإعدادات، ولكل مزود مفتاحه المستقل في SecureStore. الافتراضي في Gemini هو `gemini-3.5-flash-lite`؛ والافتراضي في Groq هو `openai/gpt-oss-20b`. يرسل المساعد نص السؤال وبعض الملاحظات ذات الصلة إلى المزود بعد إشعار الخصوصية. يظل سجل المحادثة في الذاكرة فقط. راجع [`docs/ASSISTANT.md`](docs/ASSISTANT.md) لمعرفة حدود البيانات وسياسة الأخطاء والروابط المصدرية.
 
 أداة إنشاء بيانات اختبار المساعد وتسجيل إحصاءات المسار متاحة في build التطوير فقط (`__DEV__`): اضغط مطولًا على «الإصدار» في الإعدادات. لا تظهر الأداة ولا تطبع السجل في build الإنتاج. راجع [`docs/ASSISTANT_TEST_PLAN.md`](docs/ASSISTANT_TEST_PLAN.md).
+
+## بناء APK عبر EAS من Termux
+
+ملف `eas.json` يحدد `preview` لتوزيع داخلي بصيغة APK، و`production` بصيغة Android App Bundle (AAB)، ويستخدم `cli.appVersionSource: local`. لا يحتوي الملف على أسرار أو بيانات اعتماد. لا تنفذ هذه الأوامر إلا في مجلد المشروع على هاتفك؛ يتطلب الربط حساب Expo الخاص بك، ولم أشغّل `eas login` أو `eas init` أو `eas build` نيابة عنك.
+
+```sh
+pkg update -y
+pkg install -y git nodejs-lts
+
+git clone https://github.com/abnkango/mofakkira-ai-mobile.git
+cd mofakkira-ai-mobile
+npm ci
+npm install --global eas-cli
+
+eas login
+eas whoami
+eas init
+```
+
+أثناء `eas init` سجّل الدخول واختر حساب Expo الذي تريد أن يملك المشروع، ثم اربط مستودع المفكرة بمشروع EAS أو أنشئ مشروعًا جديدًا له. يضيف الربط إلى `app.json` قيمة `expo.extra.eas.projectId` ومعها غالبًا `expo.owner` باسم الحساب. راجع الفرق قبل المتابعة:
+
+```sh
+git diff -- app.json
+```
+
+هذه القيم تربط إعدادات المستودع بمشروع EAS الخاص بك؛ لا تحذفها. ارفع التعديل ليبقى الربط محفوظًا في Git:
+
+```sh
+git add app.json
+git commit -m "Link Expo EAS project"
+git push origin main
+```
+
+بعدها اطلب بناء APK:
+
+```sh
+eas build --platform android --profile preview
+```
+
+اتبع رابط صفحة البناء الذي يعرضه CLI لمتابعة السجل والحالة. ويمكنك عرض أحدث البناءات بالأمر:
+
+```sh
+eas build:list --platform android --limit 5
+```
+
+عند اكتمال البناء افتح صفحة تفاصيله في هاتفك واضغط **Download** لتنزيل ملف `.apk`، أو افتح رابط التثبيت الذي يعرضه EAS. إذا نزّلت الملف من Termux، افتح مجلد التنزيلات بتطبيق الملفات واضغط APK. سيطلب Android السماح بتثبيت التطبيقات من هذا المصدر؛ وافق على الإذن لـTermux أو للمتصفح/مدير الملفات الذي فتح الملف، ثم أكّد التثبيت. أسماء القوائم تختلف قليلًا حسب إصدار Android وواجهة الهاتف.
+
+التثبيت فوق APK سابق يحتفظ ببياناته فقط إذا كان `android.package` وتوقيع التطبيق متوافقين. بيانات Expo Go منفصلة عن APK مستقل، لذلك لن تنتقل ملاحظات Expo Go أو إعداداته إلى التثبيت الجديد.
 
 ## التشغيل على الهاتف: Termux + Expo Go
 
@@ -32,7 +80,7 @@
 - الالتزام المدقق: `a9a97f454e767a3da2c33e79c5b47f4699d57432`
 - النموذج المنشور: https://abnkango.github.io/mofakkira-ai/
 
-إصدار Expo SDK المستخدم هو **57.0.27**، ونسخة `expo-sqlite` هي **57.0.4** المطابقة لـSDK 57. خطوات Termux + Expo Go أعلاه هي مسار التشغيل الحالي.
+إصدار Expo SDK المستخدم هو **57.0.31**، ونسخة `expo-sqlite` هي **57.0.4** المطابقة لـSDK 57. راجع أعلاه مساري Termux + Expo Go وبناء APK عبر EAS.
 
 ## قرارات RTL وAndroid المعتمدة
 
