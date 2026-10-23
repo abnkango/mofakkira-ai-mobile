@@ -31,7 +31,7 @@ export type AppStateValue = {
   toggleTask: (id: string) => Promise<void>
   deleteTask: (id: string) => Promise<void>
   resetData: () => Promise<void>
-  addChatMessage: (message: ChatRecord) => Promise<void>
+  addChatMessage: (role: ChatRecord['role'], content: string, sources?: string[] | null) => Promise<ChatRecord>
   purgeChatHistory: () => Promise<void>
   addExpiredChatSampleForDevelopment: () => Promise<void>
   saveApiKey: (value: string, provider?: AIProvider) => Promise<void>
@@ -65,7 +65,7 @@ export const AppStateProvider = ({ children }: PropsWithChildren): ReactElement 
     const addTask = async (text: string): Promise<void> => { const task = { id: id('task'), text: text.trim(), done: false, createdAt: now() }; await persist('tasks.create', () => tasksRepo.create(task)); setTasks((items) => [task, ...items]) }
     const toggleTask = async (taskId: string): Promise<void> => { const current = tasks.find((task) => task.id === taskId); if (!current) return; await persist('tasks.toggle', () => tasksRepo.toggle(taskId, !current.done)); setTasks((items) => items.map((task) => task.id === taskId ? { ...task, done: !task.done } : task)) }
     const deleteTask = async (taskId: string): Promise<void> => { await persist('tasks.remove', () => tasksRepo.remove(taskId)); setTasks((items) => items.filter((task) => task.id !== taskId)) }
-    const addChatMessage = async (message: ChatRecord): Promise<void> => { setChatMessages((current) => [...current, message]); try { await chatRepo.add(message) } catch { setOperationError('تعذر حفظ التغيير. حاول مرة أخرى.') } }
+    const addChatMessage = async (role: ChatRecord['role'], content: string, sources: string[] | null = null): Promise<ChatRecord> => { const message: ChatRecord = { id: createChatMessageId(), role, content, createdAt: now(), sources }; setChatMessages((current) => [...current, message]); try { await chatRepo.add(message) } catch { setOperationError('تعذر حفظ التغيير. حاول مرة أخرى.') }; return message }
     const purgeChatHistory = async (): Promise<void> => { const cutoff = chatMessageCutoff(now()); setChatMessages((current) => current.filter((message) => message.createdAt >= cutoff)); try { await chatRepo.purgeOlderThan(cutoff) } catch { setOperationError('تعذر حفظ التغيير. حاول مرة أخرى.') } }
     const addExpiredChatSampleForDevelopment = async (): Promise<void> => { if (!__DEV__) return; try { await chatRepo.add({ id: createChatMessageId(), role: 'user', content: 'رسالة اختبار قديمة لتنقية السجل', createdAt: now() - chatRetentionMs - 86_400_000, sources: null }) } catch { setOperationError('تعذر حفظ التغيير. حاول مرة أخرى.') } }
     const resetData = async (): Promise<void> => { await chatRepo.flushWrites(); await persist('database.reset', () => resetDatabase()); draftIds.current.clear(); noteSnapshots.current.clear(); setNotes([]); setFolders([]); setTasks([]); setChatMessages([]); setNoteCounts({}) }
