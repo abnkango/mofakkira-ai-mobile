@@ -4,7 +4,7 @@
 
 ## الحالة
 
-تم إنجاز **Phase 0 – Audit** و**Phase 1 – Foundation** و**Phase 2 – Screens** و**Phase 3 – Verification** و**Phase 4 – Persistent SQLite Data Layer**، وأُضيف المساعد الحقيقي عبر OpenAI-compatible API مع استرجاع الملاحظات واستخراج المهام. راجع [`docs/PORTING_AUDIT.md`](docs/PORTING_AUDIT.md) للتدقيق والقرارات الملزمة، و[`docs/PARITY_REPORT.md`](docs/PARITY_REPORT.md) لنتائج التحقق والاختلافات، و[`docs/DATA_LAYER.md`](docs/DATA_LAYER.md) للمخطط والقواعد، و[`docs/ASSISTANT.md`](docs/ASSISTANT.md) لبنية المساعد وسياسة الخصوصية، و[`docs/ASSISTANT_TEST_PLAN.md`](docs/ASSISTANT_TEST_PLAN.md) للاختبارات اليدوية.
+تم إنجاز **Phase 0 – Audit** و**Phase 1 – Foundation** و**Phase 2 – Screens** و**Phase 3 – Verification** و**Phase 4 – Persistent SQLite Data Layer**، وأُضيف المساعد الحقيقي عبر OpenAI-compatible API مع استرجاع الملاحظات واستخراج المهام. راجع [`docs/PORTING_AUDIT.md`](docs/PORTING_AUDIT.md) للتدقيق والقرارات الملزمة، و[`docs/PARITY_REPORT.md`](docs/PARITY_REPORT.md) لنتائج التحقق والاختلافات، و[`docs/DATA_LAYER.md`](docs/DATA_LAYER.md) للمخطط والقواعد، و[`docs/ASSISTANT.md`](docs/ASSISTANT.md) لبنية المساعد وسياسة الخصوصية، و[`docs/ASSISTANT_TEST_PLAN.md`](docs/ASSISTANT_TEST_PLAN.md) للاختبارات اليدوية، و[`docs/ANDROID_EAS_RELEASE_CHECKLIST.md`](docs/ANDROID_EAS_RELEASE_CHECKLIST.md) لتقرير الهوية والأيقونات والصلاحيات وخطوات تحقق APK، و[`docs/RELEASE_CHECKLIST.md`](docs/RELEASE_CHECKLIST.md) للاختبارات اليدوية المرقمة على Redmi.
 
 ## Expo SDK
 
@@ -95,7 +95,7 @@ eas build:list --platform android --limit 5
 
 ## تدقيق Android Manifest والنسخ الاحتياطي
 
-فُحص manifest مولد محليًا بـ`npx expo prebuild --platform android --no-install` ثم حُذف مجلد `android/` المولد ولم يُضمّن في المستودع. تحتاج اتصالات المساعد إلى `INTERNET`؛ وحُجبت `READ_EXTERNAL_STORAGE` و`WRITE_EXTERNAL_STORAGE` لأنها جاءت من `expo-file-system` غير المستخدم، ولا يوجد في التطبيق منتقي ملفات أو كود يقرأ أو يكتب ملفات مشتركة. أظهر prebuild علامتي إزالة لهاتين الصلاحيتين. يصرّح القالب أيضًا بـ`SYSTEM_ALERT_WINDOW` و`VIBRATE` ضمن إعداد Expo/React Native الأساسيين، وأبقيناهما بدل تعطيل سلوكيات المنصة دون حاجة.
+فُحص manifest مولد محليًا بـ`npx expo prebuild --platform android --no-install` ثم حُذف مجلد `android/` المولد ولم يُضمّن في المستودع. تحتاج اتصالات المساعد إلى `INTERNET`؛ وحُجبت `READ_EXTERNAL_STORAGE` و`WRITE_EXTERNAL_STORAGE` لأن `expo-file-system` غير مستخدم في التطبيق ولا يوجد منتقي ملفات أو كود يقرأ/يكتب ملفات مشتركة. وحُجبت كذلك `SYSTEM_ALERT_WINDOW` و`VIBRATE` لعدم وجود استخدام لهما في التطبيق. أظهر manifest علامات إزالة للصلاحيات الأربع؛ بقيت `INTERNET` فقط. يلزم تأكيد القائمة النهائية في APK بعد دمج manifests.
 
 قيم التطبيق المولدة هي `android:supportsRtl="true"` و`android:allowBackup="true"`. يضيف config plugin لـSecureStore قواعد تستثني SharedPreferences المسماة `SecureStore` من النسخ لأنها مشفرة بمفتاح Android Keystore؛ لكن بيانات SQLite الخاصة بالتطبيق قد تظل ضمن النسخ الاحتياطي التلقائي للنظام. لذلك قد تنتقل الملاحظات حسب إعدادات النقل/النسخ في Android، بينما لا ينبغي توقع انتقال مفاتيح API المخزنة في SecureStore. لم نغيّر `allowBackup`.
 
