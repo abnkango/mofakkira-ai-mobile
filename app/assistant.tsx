@@ -51,12 +51,13 @@ export default function AssistantScreen(): ReactElement {
       } else {
         const metadataReply = await chat({ ...provider, apiKey, messages: buildMetadataPrompt(question, retrievalCandidates, folders, history), signal: controller.signal, temperature: 0, maxTokens: 1200 })
         const ids = parseRelevantIds(metadataReply, new Set(retrievalCandidates.map((note) => note.id)), 8)
+        if (ids !== null && ids.length === 0) { const answer = await chat({ ...provider, apiKey, messages: buildAnswerMessages(question, [], folders, history), signal: controller.signal, temperature: 0.35, maxTokens: 1400 }); const parsed = parseSourceIds(answer, new Set()); await addChatMessage('assistant', parsed.text, []); return }
         const retrieved = ids === null ? localSearchFallback(question, retrievalCandidates, 8) : ids.map((id) => retrievalCandidates.find((note) => note.id === id)).filter((note): note is CandidateNote => Boolean(note))
         selectedNotes = boundNotes(appendPreviousSourceNotes(retrieved, previousSources, notes, folders, scopeFilter))
       }
       if (!selectedNotes.length) { await addChatMessage('assistant', 'لم أجد ملاحظات مرتبطة بهذا السؤال في النطاق المحدد.', []); return }
       const answer = await chat({ ...provider, apiKey, messages: buildAnswerMessages(question, selectedNotes, folders, history), signal: controller.signal, temperature: 0.35, maxTokens: 1400 })
-      const validIds = new Set(selectedNotes.map((note) => note.id)); const parsed = parseSourceIds(answer, validIds); const content = parsed.text || answer; const sourceIds = parsed.sourceIds.length ? parsed.sourceIds : selectedNotes.slice(0, 8).map((note) => note.id)
+      const validIds = new Set(selectedNotes.map((note) => note.id)); const parsed = parseSourceIds(answer, validIds); const content = parsed.text; const sourceIds = parsed.sourceIds
       await addChatMessage('assistant', content, sourceIds)
     } catch (error) {
       if (error instanceof AssistantError && error.kind === 'cancelled') return
