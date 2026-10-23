@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { I18nManager } from 'react-native'
 import Constants from 'expo-constants'
-import * as Updates from 'expo-updates'
+import { reloadAppAsync } from 'expo'
 
 const reloadMarker = 'mofakkira.rtl.reload-attempted.v1'
 
@@ -18,7 +18,7 @@ const configureRtl = async (): Promise<void> => {
   }
   await AsyncStorage.setItem(reloadMarker, '1')
   try {
-    await Updates.reloadAsync()
+    await reloadAppAsync('Enable right-to-left layout')
   } catch (error) {
     warnOutsideExpoGo('[mofakkira] The single RTL reload attempt failed. No retry will run; the app will continue without getting stuck.', error)
   }

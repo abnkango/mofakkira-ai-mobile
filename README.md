@@ -86,12 +86,20 @@ eas build:list --platform android --limit 5
 
 - التطبيق يملأ الشاشة بالكامل؛ لا يوجد إطار هاتف أو خلفية خارجية. تُستخدم safe-area insets للحشو حول المحتوى، الرأس، شريط التنقل، والأزرار العائمة.
 - في RTL، `inline-start` هو يمين الشاشة و`inline-end` هو يسارها. لذلك زر `+` يستخدم في RN `start: 18`، وزر `✦` يستخدم `end: 18`، للحفاظ على مواضع النموذج الأصلية.
-- سيُستدعى `I18nManager.allowRTL(true)` و`I18nManager.forceRTL(true)` قبل أول render. عند اكتشاف RTL خاطئ، تُكتب علامة `mofakkira.rtl.reload-attempted.v1` في AsyncStorage **قبل** طلب `Updates.reloadAsync()`، لذلك لا يُسمح إلا بمحاولة إعادة تحميل واحدة.
+- سيُستدعى `I18nManager.allowRTL(true)` و`I18nManager.forceRTL(true)` قبل أول render. إذا كانت `I18nManager.isRTL` خاطئة، تُكتب علامة `mofakkira.rtl.reload-attempted.v1` في AsyncStorage قبل إعادة تحميل واحدة عبر `reloadAppAsync` من حزمة `expo`. اخترناها لأنها تعيد تشغيل الحزمة الحالية حتى عندما تكون Expo Updates معطلة، بخلاف `Updates.reloadAsync()` التي ترفض عند تعطيل Updates أو في وضع التطوير/Expo Go؛ لا توجد حلقة إعادة تحميل.
 - زر الرجوع في Android يغلق المساعد أولًا، ثم يرجع من المحرر/المجلدات/الإعدادات/السلة، وعند شاشة الملاحظات الرئيسية يخرج من التطبيق.
 
 حالة البدء (`welcomeDone`) وإقرار الخصوصية (`privacyNoticeAcknowledged`) محفوظان في `settingsRepo` باستخدام AsyncStorage.
 
-في أول تشغيل، إذا بقي `I18nManager.isRTL` خاطئًا، يستدعي التطبيق `Updates.reloadAsync()` بعد تفعيل RTL. في التشغيل اللاحق إذا بقي خاطئًا، تُطبع `console.warn` فقط ويستمر التطبيق دون إعادة تحميل ثانية أو تعطل. لم يُتحقق هذا السلوك على جهاز Android في بيئة التنفيذ الحالية.
+في SDK 57، RTL مفعّل افتراضيًا في تطبيقات standalone وفق دليل Expo؛ كما أكد prebuild أن manifest يحتوي `android:supportsRtl="true"`. على جهاز عربي ينبغي أن يأتي الاتجاه صحيحًا من النظام قبل الحاجة إلى المسار الاحتياطي. عند اضطرار التطبيق لإجبار RTL، يعيد `reloadAppAsync` تشغيل التطبيق بنفس JavaScript الحالية ولا يتطلب إعداد EAS Update. تحفظ العلامة محاولة واحدة فقط قبل الاستدعاء لتجنب حلقة إعادة تشغيل. هذا تحقق static عبر config/manifest وليس اختبارًا على جهاز فعلي.
+
+## تدقيق Android Manifest والنسخ الاحتياطي
+
+فُحص manifest مولد محليًا بـ`npx expo prebuild --platform android --no-install` ثم حُذف مجلد `android/` المولد ولم يُضمّن في المستودع. تحتاج اتصالات المساعد إلى `INTERNET`؛ وحُجبت `READ_EXTERNAL_STORAGE` و`WRITE_EXTERNAL_STORAGE` لأنها جاءت من `expo-file-system` غير المستخدم، ولا يوجد في التطبيق منتقي ملفات أو كود يقرأ أو يكتب ملفات مشتركة. أظهر prebuild علامتي إزالة لهاتين الصلاحيتين. يصرّح القالب أيضًا بـ`SYSTEM_ALERT_WINDOW` و`VIBRATE` ضمن إعداد Expo/React Native الأساسيين، وأبقيناهما بدل تعطيل سلوكيات المنصة دون حاجة.
+
+قيم التطبيق المولدة هي `android:supportsRtl="true"` و`android:allowBackup="true"`. يضيف config plugin لـSecureStore قواعد تستثني SharedPreferences المسماة `SecureStore` من النسخ لأنها مشفرة بمفتاح Android Keystore؛ لكن بيانات SQLite الخاصة بالتطبيق قد تظل ضمن النسخ الاحتياطي التلقائي للنظام. لذلك قد تنتقل الملاحظات حسب إعدادات النقل/النسخ في Android، بينما لا ينبغي توقع انتقال مفاتيح API المخزنة في SecureStore. لم نغيّر `allowBackup`.
+
+لم نضف `expo-localization` أو `expo-system-ui` أو أي native dependency جديدة. أظهر prebuild تنبيهًا بأن `userInterfaceStyle: "automatic"` لا يفعّل تكامل مظهر Android مع النظام ما لم تكن `expo-system-ui` مثبتة؛ أبقينا القيمة كما هي امتثالًا لقيد عدم إضافة native dependencies. ينبغي اعتبار دعم auto dark mode الخاص بالنظام غير متحقق على Android إلى أن يُختبر البناء الفعلي.
 
 ## ملاحظات استكشاف الأخطاء
 
