@@ -7,8 +7,9 @@
     "userInterfaceStyle": "automatic",
     "scheme": "mofakkira-ai-mobile",
     "android": {
-      "package": "com.mofakkira.ai.mobile",
-      "softwareKeyboardLayoutMode": "resize"
+      "package": "com.abnkango.mofakkira",
+      "softwareKeyboardLayoutMode": "resize",
+      "versionCode": 1
     },
     "plugins": [
       "expo-router",
