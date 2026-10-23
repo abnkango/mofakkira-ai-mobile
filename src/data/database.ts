@@ -1,7 +1,7 @@
 import { openDatabaseAsync, type SQLiteDatabase } from 'expo-sqlite'
 
 const databaseName = 'mofakkira.db'
-const latestVersion = 1
+const latestVersion = 2
 
 let databasePromise: Promise<SQLiteDatabase> | null = null
 
@@ -39,6 +39,18 @@ const migrate = async (db: SQLiteDatabase): Promise<void> => {
         PRAGMA user_version = 1;
       `)
     }
+    if (currentVersion < 2) {
+      await transaction.execAsync(`
+        CREATE TABLE IF NOT EXISTS chat_messages (
+          id TEXT PRIMARY KEY NOT NULL,
+          role TEXT NOT NULL CHECK (role IN ('user', 'assistant')),
+          content TEXT NOT NULL,
+          created_at INTEGER NOT NULL,
+          sources TEXT
+        );
+        PRAGMA user_version = 2;
+      `)
+    }
   })
 }
 
@@ -62,7 +74,7 @@ export const getDatabase = async (): Promise<SQLiteDatabase> => initializeDataba
 export const resetDatabase = async (): Promise<void> => {
   const db = await getDatabase()
   await db.withExclusiveTransactionAsync(async (transaction) => {
-    await transaction.execAsync('DROP TABLE IF EXISTS notes; DROP TABLE IF EXISTS tasks; DROP TABLE IF EXISTS folders; DROP TABLE IF EXISTS meta; PRAGMA user_version = 0;')
+    await transaction.execAsync('DROP TABLE IF EXISTS notes; DROP TABLE IF EXISTS tasks; DROP TABLE IF EXISTS folders; DROP TABLE IF EXISTS chat_messages; DROP TABLE IF EXISTS meta; PRAGMA user_version = 0;')
   })
   await migrate(db)
 }

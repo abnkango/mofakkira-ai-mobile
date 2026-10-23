@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState, type PropsWithChildren, type ReactElement } from 'react'
-import { foldersRepo, isEmptyNote, nextUpdatedAt, notesRepo, resetDatabase, settingsRepo, tasksRepo } from './data/index'
+import { chatMessageCutoff, chatRepo, chatRetentionMs, createChatMessageId, foldersRepo, isEmptyNote, nextUpdatedAt, notesRepo, resetDatabase, settingsRepo, tasksRepo } from './data/index'
+import type { ChatRecord } from './data/chatRepo'
 import type { AIProvider, Folder, Note, Task } from './domain'
 import { useSettings } from './providers'
 
@@ -13,6 +14,7 @@ export type AppStateValue = {
   selectedNotesFolderId: string
   setSelectedNotesFolderId: (id: string) => void
   tasks: Task[]
+  chatMessages: ChatRecord[]
   noteCounts: Record<string, number>
   apiKey: string
   createNote: (folderId: string | null) => Promise<Note>
@@ -29,6 +31,9 @@ export type AppStateValue = {
   toggleTask: (id: string) => Promise<void>
   deleteTask: (id: string) => Promise<void>
   resetData: () => Promise<void>
+  addChatMessage: (message: ChatRecord) => Promise<void>
+  purgeChatHistory: () => Promise<void>
+  addExpiredChatSampleForDevelopment: () => Promise<void>
   saveApiKey: (value: string, provider?: AIProvider) => Promise<void>
   deleteApiKey: (provider?: AIProvider) => Promise<void>
 }
@@ -39,8 +44,8 @@ const id = (prefix: string): string => `${prefix}-${now()}-${Math.random().toStr
 
 export const AppStateProvider = ({ children }: PropsWithChildren): ReactElement => {
   const { provider } = useSettings()
-  const [ready, setReady] = useState(false); const [error, setError] = useState<string | null>(null); const [operationError, setOperationError] = useState<string | null>(null); const [notes, setNotes] = useState<Note[]>([]); const [folders, setFolders] = useState<Folder[]>([]); const [selectedNotesFolderId, setSelectedNotesFolderId] = useState('all'); const [tasks, setTasks] = useState<Task[]>([]); const [noteCounts, setNoteCounts] = useState<Record<string, number>>({}); const [activeKey, setActiveKey] = useState<{ provider: AIProvider; value: string } | null>(null); const apiKey = activeKey?.provider === provider ? activeKey.value : ''; const draftIds = useRef(new Set<string>()); const noteQueues = useRef(new Map<string, Promise<void>>()); const noteSnapshots = useRef(new Map<string, Pick<Note, 'title' | 'body' | 'updatedAt'>>())
-  useEffect(() => { void (async () => { try { await notesRepo.purgeExpired(); await notesRepo.removeEmptyLive(); const [loadedNotes, loadedFolders, loadedTasks] = await Promise.all([notesRepo.list(), foldersRepo.list(), tasksRepo.list()]); const countRows = await Promise.all([notesRepo.count(), notesRepo.count(null), ...loadedFolders.map((folder) => notesRepo.count(folder.id))]); noteSnapshots.current = new Map(loadedNotes.map((note) => [note.id, { title: note.title, body: note.body, updatedAt: note.updatedAt }])); setNotes(loadedNotes); setFolders(loadedFolders); setTasks(loadedTasks); setNoteCounts({ all: countRows[0], uncategorized: countRows[1], ...Object.fromEntries(loadedFolders.map((folder, index) => [folder.id, countRows[index + 2]])) }); setReady(true) } catch (cause) { console.error('[mofakkira] app state initialization failed', cause); setError(cause instanceof Error ? cause.message : 'تعذر تحميل البيانات') } })() }, [])
+  const [ready, setReady] = useState(false); const [error, setError] = useState<string | null>(null); const [operationError, setOperationError] = useState<string | null>(null); const [notes, setNotes] = useState<Note[]>([]); const [folders, setFolders] = useState<Folder[]>([]); const [selectedNotesFolderId, setSelectedNotesFolderId] = useState('all'); const [tasks, setTasks] = useState<Task[]>([]); const [chatMessages, setChatMessages] = useState<ChatRecord[]>([]); const [noteCounts, setNoteCounts] = useState<Record<string, number>>({}); const [activeKey, setActiveKey] = useState<{ provider: AIProvider; value: string } | null>(null); const apiKey = activeKey?.provider === provider ? activeKey.value : ''; const draftIds = useRef(new Set<string>()); const noteQueues = useRef(new Map<string, Promise<void>>()); const noteSnapshots = useRef(new Map<string, Pick<Note, 'title' | 'body' | 'updatedAt'>>())
+  useEffect(() => { void (async () => { try { await Promise.all([notesRepo.purgeExpired(), notesRepo.removeEmptyLive(), chatRepo.purgeOlderThan(chatMessageCutoff(now()))]); const [loadedNotes, loadedFolders, loadedTasks, loadedChat] = await Promise.all([notesRepo.list(), foldersRepo.list(), tasksRepo.list(), chatRepo.listAll()]); const countRows = await Promise.all([notesRepo.count(), notesRepo.count(null), ...loadedFolders.map((folder) => notesRepo.count(folder.id))]); noteSnapshots.current = new Map(loadedNotes.map((note) => [note.id, { title: note.title, body: note.body, updatedAt: note.updatedAt }])); setNotes(loadedNotes); setFolders(loadedFolders); setTasks(loadedTasks); setChatMessages(loadedChat); setNoteCounts({ all: countRows[0], uncategorized: countRows[1], ...Object.fromEntries(loadedFolders.map((folder, index) => [folder.id, countRows[index + 2]])) }); setReady(true) } catch (cause) { console.error('[mofakkira] app state initialization failed', cause); setError(cause instanceof Error ? cause.message : 'تعذر تحميل البيانات') } })() }, [])
   useEffect(() => { let active = true; void settingsRepo.readApiKey(provider).then((key) => { if (active) setActiveKey({ provider, value: key }) }).catch(() => { if (active) setActiveKey({ provider, value: '' }) }); return () => { active = false } }, [provider])
 
   const value = useMemo<AppStateValue>(() => {
@@ -60,9 +65,12 @@ export const AppStateProvider = ({ children }: PropsWithChildren): ReactElement 
     const addTask = async (text: string): Promise<void> => { const task = { id: id('task'), text: text.trim(), done: false, createdAt: now() }; await persist('tasks.create', () => tasksRepo.create(task)); setTasks((items) => [task, ...items]) }
     const toggleTask = async (taskId: string): Promise<void> => { const current = tasks.find((task) => task.id === taskId); if (!current) return; await persist('tasks.toggle', () => tasksRepo.toggle(taskId, !current.done)); setTasks((items) => items.map((task) => task.id === taskId ? { ...task, done: !task.done } : task)) }
     const deleteTask = async (taskId: string): Promise<void> => { await persist('tasks.remove', () => tasksRepo.remove(taskId)); setTasks((items) => items.filter((task) => task.id !== taskId)) }
-    const resetData = async (): Promise<void> => { await persist('database.reset', () => resetDatabase()); draftIds.current.clear(); noteSnapshots.current.clear(); setNotes([]); setFolders([]); setTasks([]); setNoteCounts({}) }
-    return { ready, error, operationError, clearOperationError: () => setOperationError(null), notes, folders, selectedNotesFolderId, setSelectedNotesFolderId, tasks, noteCounts, apiKey, createNote, updateNote, saveNoteOnExit, moveNote, deleteNote, restoreNote, permanentlyDeleteNote, addFolder, renameFolder, deleteFolder, addTask, toggleTask, deleteTask, resetData, saveApiKey: async (valueToSave: string, keyProvider: AIProvider = provider) => { const clean = valueToSave.trim(); await persist('saveApiKey', () => settingsRepo.saveApiKey(clean, keyProvider)); if (keyProvider === provider) setActiveKey({ provider, value: clean }) }, deleteApiKey: async (keyProvider: AIProvider = provider) => { await persist('deleteApiKey', () => settingsRepo.deleteApiKey(keyProvider)); if (keyProvider === provider) setActiveKey({ provider, value: '' }) } }
-  }, [apiKey, folders, notes, noteCounts, operationError, ready, tasks, error, provider, selectedNotesFolderId])
+    const addChatMessage = async (message: ChatRecord): Promise<void> => { setChatMessages((current) => [...current, message]); try { await chatRepo.add(message) } catch { setOperationError('تعذر حفظ التغيير. حاول مرة أخرى.') } }
+    const purgeChatHistory = async (): Promise<void> => { const cutoff = chatMessageCutoff(now()); setChatMessages((current) => current.filter((message) => message.createdAt >= cutoff)); try { await chatRepo.purgeOlderThan(cutoff) } catch { setOperationError('تعذر حفظ التغيير. حاول مرة أخرى.') } }
+    const addExpiredChatSampleForDevelopment = async (): Promise<void> => { if (!__DEV__) return; try { await chatRepo.add({ id: createChatMessageId(), role: 'user', content: 'رسالة اختبار قديمة لتنقية السجل', createdAt: now() - chatRetentionMs - 86_400_000, sources: null }) } catch { setOperationError('تعذر حفظ التغيير. حاول مرة أخرى.') } }
+    const resetData = async (): Promise<void> => { await chatRepo.flushWrites(); await persist('database.reset', () => resetDatabase()); draftIds.current.clear(); noteSnapshots.current.clear(); setNotes([]); setFolders([]); setTasks([]); setChatMessages([]); setNoteCounts({}) }
+    return { ready, error, operationError, clearOperationError: () => setOperationError(null), notes, folders, selectedNotesFolderId, setSelectedNotesFolderId, tasks, chatMessages, noteCounts, apiKey, createNote, updateNote, saveNoteOnExit, moveNote, deleteNote, restoreNote, permanentlyDeleteNote, addFolder, renameFolder, deleteFolder, addTask, toggleTask, deleteTask, resetData, addChatMessage, purgeChatHistory, addExpiredChatSampleForDevelopment, saveApiKey: async (valueToSave: string, keyProvider: AIProvider = provider) => { const clean = valueToSave.trim(); await persist('saveApiKey', () => settingsRepo.saveApiKey(clean, keyProvider)); if (keyProvider === provider) setActiveKey({ provider, value: clean }) }, deleteApiKey: async (keyProvider: AIProvider = provider) => { await persist('deleteApiKey', () => settingsRepo.deleteApiKey(keyProvider)); if (keyProvider === provider) setActiveKey({ provider, value: '' }) } }
+  }, [apiKey, chatMessages, folders, notes, noteCounts, operationError, ready, tasks, error, provider, selectedNotesFolderId])
 
   return <AppStateContext.Provider value={value}>{children}</AppStateContext.Provider>
 }

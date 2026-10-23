@@ -1,6 +1,7 @@
 export { notesRepo } from './notesRepo'
 export { foldersRepo } from './foldersRepo'
 export { tasksRepo } from './tasksRepo'
+export { chatRepo, createChatMessageId } from './chatRepo'
 export { settingsRepo } from './settingsRepo'
 export { getDatabase, initializeDatabase, resetDatabase } from './database'
-export { isEmptyNote, nextUpdatedAt, recycleCutoff, recycleWindowMs } from './rules'
+export { chatMessageCutoff, chatRetentionMs, isEmptyNote, nextUpdatedAt, recycleCutoff, recycleWindowMs } from './rules'
