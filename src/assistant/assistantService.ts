@@ -5,6 +5,8 @@ export type NoteScope = { mode: 'all' | 'folder'; selectedFolderId: string }
 export type CandidateNote = { id: string; title: string; body: string; folderId: string | null; updatedAt: number }
 export const MAX_CONTEXT_EXCHANGES = 3
 export const MAX_CONTEXT_MESSAGE_CHARS = 800
+export const TWO_STEP_RETRIEVAL_THRESHOLD = 6000
+export const retrievalPath = (totalContentLength: number): 'single' | 'two-step' => totalContentLength < TWO_STEP_RETRIEVAL_THRESHOLD ? 'single' : 'two-step'
 
 export const buildContext = (messages: { role: 'user' | 'assistant'; content: string }[], exchanges = MAX_CONTEXT_EXCHANGES, maxChars = MAX_CONTEXT_MESSAGE_CHARS): ChatMessage[] => {
   const pairs: ChatMessage[][] = []

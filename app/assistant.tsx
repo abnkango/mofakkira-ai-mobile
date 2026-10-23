@@ -13,7 +13,7 @@ import type { Note } from '../src/domain'
 import { isEmptyNote } from '../src/data/rules'
 import { useGoBackOrNotes } from '../src/navigation'
 import { AssistantError, chat } from '../src/assistant/client'
-import { appendPreviousSourceNotes, buildAnswerMessages, buildContext, buildMetadataPrompt, boundNotes, latestCandidates, localSearchFallback, MAX_CONTEXT_EXCHANGES, MAX_CONTEXT_MESSAGE_CHARS, parseRelevantIds, parseSourceIds, type CandidateNote } from '../src/assistant/assistantService'
+import { appendPreviousSourceNotes, buildAnswerMessages, buildContext, buildMetadataPrompt, boundNotes, latestCandidates, localSearchFallback, MAX_CONTEXT_EXCHANGES, MAX_CONTEXT_MESSAGE_CHARS, parseRelevantIds, parseSourceIds, retrievalPath, type CandidateNote } from '../src/assistant/assistantService'
 import { getProviderConfig } from '../src/assistant/providerConfig'
 
 type Message = { id: string; role: 'user' | 'assistant'; text: string; sourceIds?: string[]; error?: boolean; retryQuestion?: string; retryUserMessageId?: string; afterMessageId?: string }
@@ -48,7 +48,7 @@ export default function AssistantScreen(): ReactElement {
       const provider = getProviderConfig(settings)
       const totalContentLength = retrievalCandidates.reduce((total, note) => total + note.title.length + note.body.length, 0)
       const previousSources = [...chatMessages].reverse().find((message) => message.role === 'assistant')?.sources ?? []
-      const path = totalContentLength < 6000 ? 'single' : 'two-step'
+      const path = retrievalPath(totalContentLength)
       if (metrics) metrics.path = path
       let selectedNotes: CandidateNote[]
       if (path === 'single') {
