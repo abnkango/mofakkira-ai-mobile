@@ -25,8 +25,8 @@ const Navigation = (): ReactElement => {
 }
 
 const AndroidBackHandler = (): null => {
-  const pathname = usePathname(); const router = useRouter(); const { saveNoteOnExit } = useAppState()
-  useEffect(() => BackHandler.addEventListener('hardwareBackPress', () => { if (pathname === '/notes' || pathname === '/') return false; if (pathname.startsWith('/note/')) { const noteId = pathname.slice('/note/'.length); void saveNoteOnExit(noteId).then(() => goBackOrNotes(router)); return true }; goBackOrNotes(router); return true }).remove, [pathname, router, saveNoteOnExit])
+  const pathname = usePathname(); const router = useRouter()
+  useEffect(() => BackHandler.addEventListener('hardwareBackPress', () => { if (pathname === '/notes' || pathname === '/' || pathname.startsWith('/note/')) return false; goBackOrNotes(router); return true }).remove, [pathname, router])
   return null
 }
 
