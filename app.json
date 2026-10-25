@@ -44,6 +44,13 @@
     "experiments": {
       "typedRoutes": true
     },
-    "icon": "./assets/icons/icon.png"
+    "icon": "./assets/icons/icon.png",
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "d545ca39-61b5-46ab-973a-5814bd72f8e1"
+      }
+    },
+    "owner": "radom"
   }
 }
